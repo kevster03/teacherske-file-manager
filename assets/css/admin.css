@@ -1,0 +1,95 @@
+/* ========================================
+   ADMIN.CSS - Basic admin styling
+   ======================================== */
+
+/* Admin settings page enhancements */
+.tkm-settings-wrap {
+    margin: 20px 20px 0 0;
+}
+
+.tkm-settings-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tkm-settings-wrap .nav-tab-wrapper {
+    margin: 20px 0;
+}
+
+.tkm-settings-wrap .form-table {
+    margin-top: 20px;
+}
+
+.tkm-settings-wrap .form-table th {
+    width: 220px;
+    padding: 15px 10px 15px 0;
+}
+
+.tkm-settings-wrap .form-table td {
+    padding: 15px 10px;
+}
+
+/* Color picker enhancements */
+.wp-picker-container {
+    vertical-align: middle;
+}
+
+/* Admin list table improvements */
+.widefat .column-tkm_featured img {
+    display: block;
+}
+
+.widefat .column-tkm_downloads strong {
+    font-size: 16px;
+}
+
+/* Dashboard widget styling */
+#tkm_stats_widget .inside {
+    margin: 0;
+    padding: 12px;
+}
+
+/* Quick edit improvements */
+.inline-edit-col .tkm-quick-field {
+    margin-bottom: 10px;
+}
+
+/* Subject meta box */
+#taxonomy-subject .categorychecklist {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* Keyboard shortcut hint */
+.tkm-keyboard-hint {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #f0f0f1;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+/* Upload button improvements */
+.tkm-upload-area {
+    padding: 20px;
+    border: 2px dashed #dcdcde;
+    border-radius: 8px;
+    text-align: center;
+    background: #f6f7f7;
+    transition: all 0.3s ease;
+}
+
+.tkm-upload-area:hover {
+    border-color: #c92651;
+    background: #fff;
+}
+
+.tkm-upload-area.dragging {
+    border-color: #c92651;
+    background: #ffe0e8;
+}
+

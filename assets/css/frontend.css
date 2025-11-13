@@ -1,0 +1,133 @@
+/* ========================================
+   FRONTEND.CSS - Optional frontend overrides
+   ======================================== */
+
+/* Note: Most frontend CSS is inline in template for performance.
+   This file contains optional overrides and print styles. */
+
+/* Print-friendly styles */
+@media print {
+    .tkm-download-box,
+    .tkm-related,
+    .tkm-badge {
+        display: none !important;
+    }
+    
+    .tkm-single-document {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .tkm-header img {
+        max-width: 300px;
+    }
+}
+
+/* Accessibility improvements */
+.tkm-btn-download:focus {
+    outline: 3px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.tkm-progress-fill[aria-valuenow="100"] {
+    background: #28a745;
+}
+
+/* Animation enhancements (optional) */
+@media (prefers-reduced-motion: no-preference) {
+    .tkm-related-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .tkm-btn-download {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* Dark mode support (if theme supports) */
+@media (prefers-color-scheme: dark) {
+    .tkm-single-document {
+        background: #1a1a1a;
+        color: #e0e0e0;
+    }
+    
+    .tkm-meta-item span,
+    .tkm-related-item a {
+        color: #e0e0e0;
+    }
+}
+
+/* Loading skeleton (optional enhancement) */
+.tkm-loading-skeleton {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: tkm-skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes tkm-skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Smooth scroll for anchor links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus visible polyfill */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Responsive iframe embeds (if description contains videos) */
+.tkm-description iframe {
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+}
+
+/* Table responsiveness in description */
+.tkm-description table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+/* Improved link styling */
+.tkm-description a {
+    color: var(--tkm-primary, #c92651);
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.tkm-description a:hover {
+    opacity: 0.8;
+}
+
+/* Prevent layout shift */
+.tkm-header img {
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
+
+/* Improve tap targets on mobile */
+@media (max-width: 768px) {
+    .tkm-btn-download,
+    .tkm-related-item a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

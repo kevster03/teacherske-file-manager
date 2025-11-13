@@ -1,0 +1,313 @@
+<?php
+/**
+ * Settings Page - Complete with All Options
+ */
+if (!defined('ABSPATH')) exit;
+
+// Handle form submission
+if (isset($_POST['tkm_save_settings']) && check_admin_referer('tkm_settings_save')) {
+    $settings_to_save = array(
+        'tkm_primary_color','tkm_secondary_color','tkm_bg_color_1','tkm_bg_color_2','tkm_bg_color_3','tkm_bg_color_4','tkm_border_color','tkm_border_size','tkm_countdown_duration','tkm_related_files_count','tkm_version_start','tkm_version_end','tkm_remove_on_uninstall'
+    );
+    foreach ($settings_to_save as $setting) {
+        if (isset($_POST[$setting])) {
+            $value = $_POST[$setting];
+            if (strpos($setting, '_color') !== false) {
+                $value = tkm_sanitize_color($value);
+            } elseif (in_array($setting, array('tkm_countdown_duration', 'tkm_related_files_count', 'tkm_version_start', 'tkm_version_end', 'tkm_border_size'))) {
+                $value = intval($value);
+            } elseif ($setting === 'tkm_remove_on_uninstall') {
+                $value = $value === '1' ? 'yes' : 'no';
+            } else {
+                $value = sanitize_text_field($value);
+            }
+            update_option($setting, $value);
+        } else {
+            if ($setting === 'tkm_remove_on_uninstall') update_option($setting, 'no');
+        }
+    }
+    echo '<div class="notice notice-success is-dismissible"><p><strong>✅ Settings saved successfully!</strong></p></div>';
+}
+
+$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
+$settings = array(
+    'primary_color' => tkm_get_setting('primary_color', '#d30038'),
+    'secondary_color' => tkm_get_setting('secondary_color', '#ff6100'),
+    'bg_color_1' => tkm_get_setting('bg_color_1', '#c6e0f2'),
+    'bg_color_2' => tkm_get_setting('bg_color_2', '#e0c8ff'),
+    'bg_color_3' => tkm_get_setting('bg_color_3', '#f2ffb2'),
+    'bg_color_4' => tkm_get_setting('bg_color_4', '#f2dec1'),
+    'border_color' => tkm_get_setting('border_color', '#24011a'),
+    'border_size' => tkm_get_setting('border_size', 3),
+    'countdown_duration' => tkm_get_setting('countdown_duration', 10),
+    'related_files_count' => tkm_get_setting('related_files_count', 8),
+    'version_start' => tkm_get_setting('version_start', 2025),
+    'version_end' => tkm_get_setting('version_end', 2050),
+    'remove_on_uninstall' => tkm_get_setting('remove_on_uninstall', 'no')
+);
+?>
+<div class="wrap tkm-settings-wrap">
+<h1><span class="dashicons dashicons-media-document" style="color:<?php echo esc_attr($settings['primary_color']); ?>;"></span> TeachersKE File Manager Settings</h1>
+<h2 class="nav-tab-wrapper">
+<a href="?page=tkm-settings&tab=general" class="nav-tab <?php echo $active_tab === 'general' ? 'nav-tab-active' : ''; ?>">General</a>
+<a href="?page=tkm-settings&tab=colors" class="nav-tab <?php echo $active_tab === 'colors' ? 'nav-tab-active' : ''; ?>">Colors & Borders</a>
+<a href="?page=tkm-settings&tab=subjects" class="nav-tab <?php echo $active_tab === 'subjects' ? 'nav-tab-active' : ''; ?>">Subjects</a>
+<a href="?page=tkm-settings&tab=import" class="nav-tab <?php echo $active_tab === 'import' ? 'nav-tab-active' : ''; ?>">Import/Export</a>
+<a href="?page=tkm-settings&tab=data" class="nav-tab <?php echo $active_tab === 'data' ? 'nav-tab-active' : ''; ?>">Data</a>
+</h2>
+<?php if ($active_tab !== 'subjects' && $active_tab !== 'import' && $active_tab !== 'data'): ?>
+<form method="post" action=""><?php wp_nonce_field('tkm_settings_save'); ?>
+<?php endif; ?>
+<?php if ($active_tab === 'general'): ?>
+<table class="form-table">
+<tr><th scope="row">Version Range</th><td>
+<label>Start Year: <input type="number" name="tkm_version_start" value="<?php echo esc_attr($settings['version_start']); ?>" min="2020" max="2099" style="width:100px"></label>&nbsp;&nbsp;
+<label>End Year: <input type="number" name="tkm_version_end" value="<?php echo esc_attr($settings['version_end']); ?>" min="2020" max="2099" style="width:100px"></label>
+<p class="description">Year range for document versions (e.g., 2025 Edition - 2050 Edition)</p>
+</td></tr>
+<tr><th scope="row">Related Files Count</th><td>
+<input type="number" name="tkm_related_files_count" value="<?php echo esc_attr($settings['related_files_count']); ?>" min="4" max="12" style="width:80px">
+<p class="description">Number of related files to display (default: 8)</p>
+</td></tr>
+<tr><th scope="row">Countdown Duration</th><td>
+<input type="number" name="tkm_countdown_duration" value="<?php echo esc_attr($settings['countdown_duration']); ?>" min="0" max="60" style="width:80px"> seconds
+<p class="description">Time before download starts (default: 10 seconds)</p>
+</td></tr>
+<tr><th></th><td>
+<div style="background:#d4edda;border-left:4px solid #28a745;padding:15px;border-radius:4px;">
+<strong>✅ Permanent Features (Always Enabled):</strong>
+<ul style="margin:10px 0 0 20px;">
+<li>Download tracking with IP protection</li>
+<li>Schema.org DigitalDocument markup for SEO</li>
+<li>Sticky sidebar widget area</li>
+<li>Description display</li>
+<li>Progress bar loader</li>
+</ul>
+</div>
+</td></tr>
+</table>
+<?php elseif ($active_tab === 'colors'): ?>
+<table class="form-table">
+<tr><th colspan="2"><h3 style="margin:10px 0;">Primary Colors</h3></th></tr>
+<tr><th scope="row">Primary Color</th><td>
+<input type="text" name="tkm_primary_color" value="<?php echo esc_attr($settings['primary_color']); ?>" class="tkm-color-picker">
+<p class="description">Main brand color (buttons, accents, links)</p>
+</td></tr>
+<tr><th scope="row">Secondary Color</th><td>
+<input type="text" name="tkm_secondary_color" value="<?php echo esc_attr($settings['secondary_color']); ?>" class="tkm-color-picker">
+<p class="description">Secondary accent color (gradients, highlights)</p>
+</td></tr>
+<tr><th colspan="2"><h3 style="margin:20px 0 10px;">Background Colors</h3></th></tr>
+<tr><th scope="row">Background Color 1</th><td>
+<input type="text" name="tkm_bg_color_1" value="<?php echo esc_attr($settings['bg_color_1']); ?>" class="tkm-color-picker">
+<p class="description">First background color (light blue)</p>
+</td></tr>
+<tr><th scope="row">Background Color 2</th><td>
+<input type="text" name="tkm_bg_color_2" value="<?php echo esc_attr($settings['bg_color_2']); ?>" class="tkm-color-picker">
+<p class="description">Second background color (light purple)</p>
+</td></tr>
+<tr><th scope="row">Background Color 3</th><td>
+<input type="text" name="tkm_bg_color_3" value="<?php echo esc_attr($settings['bg_color_3']); ?>" class="tkm-color-picker">
+<p class="description">Third background color (light yellow)</p>
+</td></tr>
+<tr><th scope="row">Background Color 4</th><td>
+<input type="text" name="tkm_bg_color_4" value="<?php echo esc_attr($settings['bg_color_4']); ?>" class="tkm-color-picker">
+<p class="description">Fourth background color (light peach)</p>
+</td></tr>
+<tr><th colspan="2"><h3 style="margin:20px 0 10px;">Border Settings</h3></th></tr>
+<tr><th scope="row">Border Color</th><td>
+<input type="text" name="tkm_border_color" value="<?php echo esc_attr($settings['border_color']); ?>" class="tkm-color-picker">
+<p class="description">Border color for all elements</p>
+</td></tr>
+<tr><th scope="row">Border Size</th><td>
+<input type="number" name="tkm_border_size" value="<?php echo esc_attr($settings['border_size']); ?>" min="1" max="10" style="width:80px"> px
+<p class="description">Border thickness (1-10px, default: 3px)</p>
+</td></tr>
+</table>
+<?php elseif ($active_tab === 'subjects'): ?>
+<div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:20px;margin:20px 0">
+<h3>Subject Management by Level</h3>
+<p>Add subjects for each education level. One subject per line.</p>
+<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+<input type="hidden" name="action" value="tkm_save_subjects">
+<?php wp_nonce_field('tkm_save_subjects'); ?>
+<?php
+$levels = tkm_get_levels();
+$subjects_by_level = get_option('tkm_subjects_by_level', array());
+foreach ($levels as $key => $data):
+    $subjects = isset($subjects_by_level[$key]) ? $subjects_by_level[$key] : array();
+    $subjects_text = implode("\n", $subjects);
+?>
+<div style="margin-bottom:25px">
+<h4 style="margin-bottom:10px"><?php echo esc_html($data['label']); ?></h4>
+<textarea name="tkm_subjects[<?php echo esc_attr($key); ?>]" rows="6" style="width:100%;max-width:600px;font-family:monospace" placeholder="Enter subjects, one per line..."><?php echo esc_textarea($subjects_text); ?></textarea>
+</div>
+<?php endforeach; ?>
+<p><button type="submit" class="button button-primary button-large">Save All Subjects</button></p>
+</form>
+</div>
+<?php elseif ($active_tab === 'import'): ?>
+<div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:20px;margin:20px 0">
+<h3>Export Documents</h3>
+<p>Export all documents to JSON format for backup or migration.</p>
+<form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+<input type="hidden" name="action" value="tkm_export_documents">
+<?php wp_nonce_field('tkm_export_documents'); ?>
+<button type="submit" class="button button-primary"><span class="dashicons dashicons-download" style="margin-top:3px"></span> Export All Documents</button>
+</form>
+</div>
+
+<div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:20px;margin:20px 0">
+<h3>Import Documents (JSON)</h3>
+<p>Import documents from JSON file.</p>
+<form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data">
+<input type="hidden" name="action" value="tkm_import_documents">
+<?php wp_nonce_field('tkm_import_documents'); ?>
+<input type="file" name="tkm_import_file" accept=".json" required>
+<button type="submit" class="button button-primary"><span class="dashicons dashicons-upload" style="margin-top:3px"></span> Import JSON File</button>
+</form>
+</div>
+
+<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:20px;margin:20px 0">
+<h3>📋 CSV Bulk Import - Coming Soon</h3>
+<p><strong>This feature is being finalized and will be available in the next update.</strong></p>
+<p>In the meantime, you can use JSON import above for bulk operations.</p>
+
+<details style="margin-top:15px">
+<summary style="cursor:pointer;font-weight:700;color:#856404">📝 Developer Notes: How to Enable CSV Import</summary>
+<div style="margin-top:15px;padding:15px;background:#fff;border:1px solid #ddd">
+<p><strong>To enable CSV import functionality:</strong></p>
+
+<p><strong>1. Download CSV Template Handler (Already Working):</strong></p>
+<p>✅ The CSV template download is already functional. Users can download template at:<br>
+<code>Settings → File Manager → Import/Export → Download CSV Template</code></p>
+
+<p><strong>2. Create CSV Import Handler (Need to Add):</strong></p>
+<p>Add this code to <code>includes/settings.php</code> after the <code>tkm_download_csv_template()</code> function:</p>
+
+<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
+/**
+ * Handle CSV Upload and Import
+ */
+function tkm_handle_csv_import() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Permission denied');
+    }
+    
+    check_admin_referer('tkm_csv_import');
+    
+    if (!isset($_FILES['tkm_csv_file'])) {
+        wp_die('No file uploaded');
+    }
+    
+    $file = $_FILES['tkm_csv_file'];
+    
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        wp_die('Upload error: ' . $file['error']);
+    }
+    
+    // Parse CSV and import
+    $importer = new TKM_Bulk_Importer();
+    $result = $importer->import_from_csv($file['tmp_name']);
+    
+    // Redirect with message
+    wp_redirect(admin_url('options-general.php?page=tkm-settings&tab=import&imported=' . $result['success']));
+    exit;
+}
+add_action('admin_post_tkm_csv_import', 'tkm_handle_csv_import');
+</pre>
+
+<p><strong>3. Update Bulk Importer Class:</strong></p>
+<p>Add <code>import_from_csv()</code> method to <code>includes/class-bulk-importer.php</code>:</p>
+
+<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
+public function import_from_csv($file_path) {
+    $handle = fopen($file_path, 'r');
+    $header = fgetcsv($handle); // Skip header
+    $imported = 0;
+    
+    while (($data = fgetcsv($handle)) !== false) {
+        // Map CSV columns to post data
+        $post_data = array(
+            'title' => $data[0],
+            'description' => $data[1],
+            'file_url' => $data[2],
+            'level' => $data[3],
+            'grade' => $data[4],
+            'subject' => $data[5],
+            'version' => $data[6],
+            'category' => $data[7],
+            'featured_image' => $data[8]
+        );
+        
+        if ($this->import_single_document($post_data)) {
+            $imported++;
+        }
+    }
+    
+    fclose($handle);
+    return array('success' => $imported);
+}
+</pre>
+
+<p><strong>4. Enable Form in Settings:</strong></p>
+<p>Replace the "Coming Soon" section in <code>admin/settings-page.php</code> with:</p>
+
+<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
+&lt;div style="background:#fff;border:1px solid #ccc;padding:20px"&gt;
+&lt;h3&gt;CSV Bulk Import&lt;/h3&gt;
+&lt;p&gt;Import multiple documents from CSV file.&lt;/p&gt;
+&lt;p&gt;&lt;a href="&lt;?php echo admin_url('admin-post.php?action=tkm_download_template'); ?&gt;" class="button"&gt;Download CSV Template&lt;/a&gt;&lt;/p&gt;
+&lt;form method="post" action="&lt;?php echo admin_url('admin-post.php'); ?&gt;" enctype="multipart/form-data"&gt;
+&lt;input type="hidden" name="action" value="tkm_csv_import"&gt;
+&lt;?php wp_nonce_field('tkm_csv_import'); ?&gt;
+&lt;input type="file" name="tkm_csv_file" accept=".csv" required&gt;
+&lt;button type="submit" class="button button-primary"&gt;Upload &amp; Import CSV&lt;/button&gt;
+&lt;/form&gt;
+&lt;/div&gt;
+</pre>
+
+<p style="margin-top:15px;padding:10px;background:#d4edda;border-left:4px solid #28a745">
+<strong>✅ Summary:</strong> CSV template download works now. To enable import, add the handler function and update the importer class as shown above. Estimated time: 15 minutes.
+</p>
+</div>
+</details>
+</div>
+<?php elseif ($active_tab === 'data'): ?>
+<div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:20px;margin:20px 0">
+<h3>Reset Download Counts</h3>
+<p>Reset all download counts to zero. This cannot be undone.</p>
+<form method="post" action="<?php echo admin_url('admin-post.php'); ?>" onsubmit="return confirm('Are you sure? This will reset all download counts.');">
+<input type="hidden" name="action" value="tkm_reset_downloads">
+<?php wp_nonce_field('tkm_reset_downloads'); ?>
+<button type="submit" class="button button-secondary">Reset All Download Counts</button>
+</form>
+</div>
+<table class="form-table">
+<tr><th scope="row">Remove Data on Uninstall</th><td>
+<form method="post" action="">
+<?php wp_nonce_field('tkm_settings_save'); ?>
+<label><input type="checkbox" name="tkm_remove_on_uninstall" value="1" <?php checked($settings['remove_on_uninstall'], 'yes'); ?>> Delete all plugin data when plugin is uninstalled</label>
+<p class="description">WARNING: This will permanently delete all documents, settings, and data.</p>
+<button type="submit" name="tkm_save_settings" class="button button-primary" style="margin-top:10px">Save Setting</button>
+</form>
+</td></tr>
+</table>
+<?php endif; ?>
+<?php if ($active_tab !== 'subjects' && $active_tab !== 'import' && $active_tab !== 'data'): ?>
+<p class="submit"><button type="submit" name="tkm_save_settings" class="button button-primary button-large">Save Settings</button></p>
+</form>
+<?php endif; ?>
+</div>
+<script>
+jQuery(document).ready(function($) {
+    if ($.fn.wpColorPicker) {
+        $('.tkm-color-picker').wpColorPicker();
+    }
+});
+</script>
+<style>
+.tkm-settings-wrap .form-table th{width:220px}
+.tkm-settings-wrap h3{margin-top:0}
+.tkm-settings-wrap .button .dashicons{margin-top:3px}
+</style>
