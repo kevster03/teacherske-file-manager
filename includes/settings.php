@@ -225,36 +225,8 @@ function tkm_download_csv_template() {
 }
 add_action('admin_post_tkm_download_template', 'tkm_download_csv_template');
 
-/**
- * Register CSV Import Page
- */
-function tkm_register_csv_import_page() {
-    add_submenu_page(
-        null, // No menu item, accessed via settings page
-        __('CSV Import', 'teacherske'),
-        __('CSV Import', 'teacherske'),
-        'manage_options',
-        'tkm-csv-import',
-        'tkm_render_csv_import_page'
-    );
-}
-add_action('admin_menu', 'tkm_register_csv_import_page');
-
-/**
- * Render CSV Import Page
- */
-function tkm_render_csv_import_page() {
-    if (!current_user_can('manage_options')) {
-        wp_die(__('You do not have sufficient permissions to access this page.'));
-    }
-    
-    echo '<div class="wrap">';
-    echo '<h1>CSV Import</h1>';
-    echo '<p>CSV bulk import functionality coming soon. Use JSON import for now.</p>';
-    echo '<p><a href="' . admin_url('options-general.php?page=tkm-settings&tab=import') . '" class="button button-primary">Back to Import/Export</a></p>';
-    echo '</div>';
-}
-add_action('admin_menu', 'tkm_register_csv_import_page');
+// NOTE: CSV Import page moved to admin/csv-import-page.php (full implementation)
+// Old placeholder functions removed to prevent duplicate function definition errors
 
 /**
  * Import Documents from JSON
