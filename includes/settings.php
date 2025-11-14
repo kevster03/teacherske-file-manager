@@ -61,9 +61,8 @@ function tkm_register_settings() {
         'tkm_featured_image_size',
         'tkm_show_description',
         'tkm_fallback_image',
-        'tkm_fallback_featured_image', // NEW: Fallback featured image ID
         'tkm_related_files_count',
-        'tkm_enable_sidebar', // NEW: Sidebar enable/disable
+        'tkm_enable_sidebar',
 
         // SEO
         'tkm_enable_schema',
@@ -102,7 +101,7 @@ function tkm_sanitize_setting($value) {
     }
     
     // Integer fields
-    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end', 'fallback_featured_image'))) {
+    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end'))) {
         return intval($value);
     }
 
@@ -194,8 +193,8 @@ function tkm_download_csv_template() {
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
     
     // Headers
-    fputcsv($output, array('title', 'description', 'file_url', 'level', 'grade', 'subject', 'version', 'category', 'featured_image_url'));
-    
+    fputcsv($output, array('title', 'description', 'file_url', 'level', 'grade', 'subject', 'version', 'featured_image_url'));
+
     // Sample rows
     fputcsv($output, array(
         'Grade 7 Mathematics - Algebra Notes',
@@ -205,10 +204,9 @@ function tkm_download_csv_template() {
         'Grade 7',
         'Mathematics',
         '2025 Edition',
-        'Notes',
         'https://example.com/images/math-cover.jpg'
     ));
-    
+
     fputcsv($output, array(
         'PP2 English Activities Term 1',
         'Complete English activities for PP2 learners',
@@ -217,7 +215,6 @@ function tkm_download_csv_template() {
         'PP2',
         'English Activities',
         '2025 Edition',
-        'Schemes',
         'https://example.com/images/pp2-cover.jpg'
     ));
     

@@ -134,10 +134,6 @@
         },
 
         buildMappingInterface: function() {
-            console.log('Building mapping interface...');
-            console.log('Headers:', this.headers);
-            console.log('Auto-mapping:', this.mapping);
-
             var html = '';
 
             // Info box
@@ -163,13 +159,10 @@
                 {name: 'grade', label: 'Grade', required: true},
                 {name: 'description', label: 'Description', required: false},
                 {name: 'subject', label: 'Subject', required: false},
-                {name: 'category', label: 'Category', required: false},
                 {name: 'featured_image', label: 'Featured Image URL', required: false},
                 {name: 'version', label: 'Version', required: false},
                 {name: 'author', label: 'Author', required: false}
             ];
-
-            console.log('Fields to render:', fields.map(function(f) { return f.name; }));
 
             var self = this;
             $.each(fields, function(i, field) {

@@ -18,7 +18,7 @@ class TKM_Bulk_Importer {
     /**
      * Optional fields
      */
-    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author', 'category', 'featured_image');
+    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author', 'featured_image');
     
     /**
      * Maximum file size (10MB)
@@ -287,67 +287,17 @@ class TKM_Bulk_Importer {
             update_post_meta($post_id, '_tkm_subject', sanitize_text_field($data['subject']));
         }
 
-        // Add category (file_category taxonomy)
-        if (!empty($data['category'])) {
-            $categories = array_map('trim', explode(',', $data['category']));
-            // Remove empty values
-            $categories = array_filter($categories);
-
-            if (!empty($categories)) {
-                // wp_set_post_terms will create terms if they don't exist
-                $result = wp_set_post_terms($post_id, $categories, 'file_category', false);
-
-                // Log if there's an error
-                if (is_wp_error($result)) {
-                    error_log('Category assignment failed for post ' . $post_id . ': ' . $result->get_error_message());
-                }
-            }
-        }
-
-        // Add featured image from URL or use fallback
-        $featured_image_set = false;
-        $featured_image_source = '';
-
+        // Add featured image from URL
         if (!empty($data['featured_image'])) {
-            $image_result = $this->download_featured_image($data['featured_image'], $post_id);
-            if ($image_result) {
-                $featured_image_set = true;
-                $featured_image_source = 'Downloaded from URL';
-            }
-        }
-
-        // If no image was set (either no URL provided or download failed), use fallback
-        if (!$featured_image_set) {
-            $fallback_image_id = get_option('tkm_fallback_featured_image', 0);
-            if ($fallback_image_id) {
-                // Verify the attachment exists and is an image
-                $attachment_url = wp_get_attachment_url($fallback_image_id);
-                if ($attachment_url && wp_attachment_is_image($fallback_image_id)) {
-                    $result = set_post_thumbnail($post_id, intval($fallback_image_id));
-                    if ($result) {
-                        $featured_image_set = true;
-                        $featured_image_source = 'Fallback image (ID: ' . $fallback_image_id . ')';
-                    }
-                } else {
-                    error_log('Fallback featured image ID ' . $fallback_image_id . ' is not valid or not an image');
-                }
-            }
+            $this->download_featured_image($data['featured_image'], $post_id);
         }
 
         // Initialize download tracking
         update_post_meta($post_id, '_tkm_download_count', 0);
 
-        // Get category names for debugging
-        $assigned_categories = wp_get_post_terms($post_id, 'file_category', array('fields' => 'names'));
-        $category_info = !empty($assigned_categories) && !is_wp_error($assigned_categories)
-            ? implode(', ', $assigned_categories)
-            : 'None';
-
         return array(
             'success' => true,
-            'post_id' => $post_id,
-            'featured_image' => $featured_image_set ? $featured_image_source : 'None',
-            'categories' => $category_info
+            'post_id' => $post_id
         );
     }
     
@@ -453,7 +403,6 @@ class TKM_Bulk_Importer {
             'grade',
             'version',
             'subject',
-            'category',
             'featured_image',
             'author'
         );
@@ -466,7 +415,6 @@ class TKM_Bulk_Importer {
             'Grade 7',
             '2026 Edition',
             'Mathematics',
-            'Schemes of Work',
             'https://example.com/images/cover.jpg',
             'admin'
         );
@@ -509,7 +457,6 @@ class TKM_Bulk_Importer {
             'grade' => __('Specific grade (required): PP1, PP2, Grade 1, Grade 2, etc.', 'teacherske'),
             'version' => __('Document version: 2026 Edition, 2027 Edition, etc.', 'teacherske'),
             'subject' => __('Subject name (must match existing subjects)', 'teacherske'),
-            'category' => __('Category name (e.g., Schemes of Work, Lesson Plans, etc.)', 'teacherske'),
             'featured_image' => __('Full URL to featured image (will be downloaded and attached)', 'teacherske'),
             'author' => __('WordPress username or email of document author', 'teacherske')
         );
