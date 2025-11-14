@@ -148,9 +148,13 @@
             // Build mapping interface
             this.buildMappingInterface();
 
-            // Update URL to step 2
+            // Update URL to step 2 (preserve post_type parameter)
             this.log('Redirecting to step 2...');
-            window.location.href = window.location.pathname + '?page=tkm-csv-import&step=2';
+            var baseUrl = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=2';
+            if (tkmCSV.debug) {
+                baseUrl += '&debug';
+            }
+            window.location.href = baseUrl;
         },
 
         buildMappingInterface: function() {
@@ -218,7 +222,7 @@
 
             // Buttons
             html += '<p>';
-            html += '<a href="' + window.location.pathname + '?page=tkm-csv-import" class="button">← Back</a> ';
+            html += '<a href="' + window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import" class="button">← Back</a> ';
             html += '<button type="submit" class="button button-primary button-large">Start Import →</button>';
             html += '</p>';
 
@@ -262,8 +266,12 @@
             this.totalImported = 0;
             this.totalErrors = [];
 
-            // Redirect to step 3
-            window.location.href = window.location.pathname + '?page=tkm-csv-import&step=3';
+            // Redirect to step 3 (preserve post_type parameter)
+            var baseUrl = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=3';
+            if (tkmCSV.debug) {
+                baseUrl += '&debug';
+            }
+            window.location.href = baseUrl;
         },
 
         processBatch: function(batchStart) {
@@ -367,7 +375,7 @@
             // Actions
             html += '<p style="margin-top:30px;">';
             html += '<a href="' + tkmCSV.documentsUrl + '" class="button button-primary button-large">View Imported Documents</a> ';
-            html += '<a href="' + window.location.pathname + '?page=tkm-csv-import" class="button button-large">Import Another File</a>';
+            html += '<a href="' + window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import" class="button button-large">Import Another File</a>';
             html += '</p>';
 
             $('#import-results').html(html).show();
