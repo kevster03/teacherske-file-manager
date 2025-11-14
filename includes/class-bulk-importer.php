@@ -21,9 +21,9 @@ class TKM_Bulk_Importer {
     const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author');
     
     /**
-     * Maximum file size (5MB)
+     * Maximum file size (10MB)
      */
-    const MAX_FILE_SIZE = 5242880;
+    const MAX_FILE_SIZE = 10485760;
     
     /**
      * Process CSV import
@@ -44,7 +44,7 @@ class TKM_Bulk_Importer {
         if (filesize($file_path) > self::MAX_FILE_SIZE) {
             return array(
                 'success' => false,
-                'error' => __('File too large. Maximum 5MB.', 'teacherske')
+                'error' => __('File too large. Maximum 10MB.', 'teacherske')
             );
         }
         

@@ -51,7 +51,37 @@ function tkm_render_meta_box($post) {
     
     ?>
     <div class="tkm-meta-box-wrapper">
-        
+
+        <!-- Template Selector -->
+        <?php if ($post->post_status === 'auto-draft' || (isset($_GET['template']) && $_GET['template'])):
+            $templates = get_posts(array(
+                'post_type' => 'teacher_template',
+                'posts_per_page' => -1,
+                'orderby' => 'title',
+                'order' => 'ASC'
+            ));
+            if (!empty($templates)):
+        ?>
+        <div class="tkm-field tkm-field-full" style="background:#f0f6fc;border:2px solid #c92651;padding:15px;border-radius:8px;margin-bottom:20px;">
+            <label class="tkm-label">
+                <strong style="color:#c92651;"><?php _e('Apply Template', 'teacherske'); ?></strong>
+                <span class="tkm-hint"><?php _e('Pre-fill document fields from a saved template', 'teacherske'); ?></span>
+            </label>
+            <select name="tkm_apply_template" id="tkm_apply_template" class="tkm-input" style="margin-top:8px;">
+                <option value=""><?php _e('— Select a Template —', 'teacherske'); ?></option>
+                <?php foreach ($templates as $template): ?>
+                    <option value="<?php echo esc_attr($template->ID); ?>"><?php echo esc_html($template->post_title); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="button" id="tkm_apply_template_btn" class="button button-secondary" style="margin-top:10px;" disabled>
+                <?php _e('Apply Template', 'teacherske'); ?>
+            </button>
+        </div>
+        <?php
+            endif;
+        endif;
+        ?>
+
         <!-- Description Field -->
         <div class="tkm-field tkm-field-full">
             <label class="tkm-label">
@@ -341,7 +371,8 @@ function tkm_admin_enqueue($hook) {
         'postId' => $post->ID,
         'saveText' => __('Saving...', 'teacherske'),
         'savedText' => __('✓ Saved!', 'teacherske'),
-        'errorText' => __('Save failed', 'teacherske')
+        'errorText' => __('Save failed', 'teacherske'),
+        'templateNonce' => wp_create_nonce('tkm_template_apply')
     ));
 }
 add_action('admin_enqueue_scripts', 'tkm_admin_enqueue');
@@ -406,9 +437,166 @@ add_action('admin_menu', 'tkm_remove_unnecessary_metaboxes');
  */
 function tkm_disable_autosave() {
     global $post;
-    
+
     if ($post && get_post_type($post->ID) === 'teacher_document') {
         wp_dequeue_script('autosave');
     }
 }
 add_action('admin_print_scripts', 'tkm_disable_autosave');
+
+/**
+ * Add Template Meta Boxes
+ */
+function tkm_add_template_meta_boxes() {
+    add_meta_box(
+        'tkm_template_defaults',
+        '<span class="dashicons dashicons-admin-generic" style="color:#c92651;"></span> ' . __('Template Defaults', 'teacherske'),
+        'tkm_render_template_meta_box',
+        'teacher_template',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'tkm_add_template_meta_boxes');
+
+/**
+ * Render Template Meta Box
+ */
+function tkm_render_template_meta_box($post) {
+    wp_nonce_field('tkm_save_template', 'tkm_template_nonce');
+
+    // Get existing values
+    $level = get_post_meta($post->ID, '_tkm_template_level', true);
+    $grade = get_post_meta($post->ID, '_tkm_template_grade', true);
+    $subject = get_post_meta($post->ID, '_tkm_template_subject', true);
+    $version = get_post_meta($post->ID, '_tkm_template_version', true);
+    $description = get_post_meta($post->ID, '_tkm_template_description', true);
+
+    $levels = tkm_get_levels();
+    $subjects_for_level = $level ? tkm_get_subjects_for_level($level) : array();
+    ?>
+    <div class="tkm-meta-box-wrapper">
+        <p style="background:#f0f6fc;padding:12px;border-left:4px solid #c92651;margin-bottom:20px;">
+            <?php _e('Templates allow you to pre-fill document fields. When creating a new document, users can select this template to automatically populate these fields.', 'teacherske'); ?>
+        </p>
+
+        <div class="tkm-field-row">
+            <div class="tkm-field">
+                <label class="tkm-label">
+                    <strong><?php _e('Education Level', 'teacherske'); ?></strong>
+                </label>
+                <select name="tkm_template_level" id="tkm_template_level" class="tkm-input">
+                    <option value=""><?php _e('— Select Level —', 'teacherske'); ?></option>
+                    <?php foreach ($levels as $key => $data): ?>
+                        <option value="<?php echo esc_attr($key); ?>" <?php selected($level, $key); ?>>
+                            <?php echo esc_html($data['label']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="tkm-field">
+                <label class="tkm-label">
+                    <strong><?php _e('Grade', 'teacherske'); ?></strong>
+                </label>
+                <input type="text" name="tkm_template_grade" value="<?php echo esc_attr($grade); ?>" class="tkm-input" placeholder="e.g., Grade 7" id="tkm_template_grade" />
+            </div>
+        </div>
+
+        <div class="tkm-field-row">
+            <div class="tkm-field">
+                <label class="tkm-label">
+                    <strong><?php _e('Subject', 'teacherske'); ?></strong>
+                </label>
+                <select name="tkm_template_subject" id="tkm_template_subject" class="tkm-input">
+                    <option value=""><?php _e('— Select Subject —', 'teacherske'); ?></option>
+                    <?php foreach ($subjects_for_level as $subj): ?>
+                        <option value="<?php echo esc_attr($subj); ?>" <?php selected($subject, $subj); ?>>
+                            <?php echo esc_html($subj); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="tkm-field">
+                <label class="tkm-label">
+                    <strong><?php _e('Version', 'teacherske'); ?></strong>
+                </label>
+                <input type="text" name="tkm_template_version" value="<?php echo esc_attr($version); ?>" class="tkm-input" placeholder="e.g., 2026 Edition" />
+            </div>
+        </div>
+
+        <div class="tkm-field tkm-field-full">
+            <label class="tkm-label">
+                <strong><?php _e('Description Template', 'teacherske'); ?></strong>
+                <span class="tkm-hint"><?php _e('Default description text (can use placeholders like {{TITLE}}, {{GRADE}}, {{SUBJECT}})', 'teacherske'); ?></span>
+            </label>
+            <textarea name="tkm_template_description" rows="4" class="tkm-textarea" placeholder="e.g., Comprehensive {{SUBJECT}} notes for {{GRADE}} students covering all topics..."><?php echo esc_textarea($description); ?></textarea>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Save Template Meta
+ */
+function tkm_save_template_meta($post_id) {
+    // Security checks
+    if (!isset($_POST['tkm_template_nonce']) || !wp_verify_nonce($_POST['tkm_template_nonce'], 'tkm_save_template')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (get_post_type($post_id) !== 'teacher_template') {
+        return;
+    }
+
+    // Save template fields
+    $fields = array('level', 'grade', 'subject', 'version', 'description');
+
+    foreach ($fields as $field) {
+        $key = 'tkm_template_' . $field;
+        if (isset($_POST[$key])) {
+            update_post_meta($post_id, '_' . $key, sanitize_text_field($_POST[$key]));
+        }
+    }
+}
+add_action('save_post', 'tkm_save_template_meta');
+
+/**
+ * AJAX: Get Template Data
+ */
+function tkm_ajax_get_template_data() {
+    check_ajax_referer('tkm_template_apply', 'nonce');
+
+    $template_id = isset($_POST['template_id']) ? intval($_POST['template_id']) : 0;
+
+    if (!$template_id || get_post_type($template_id) !== 'teacher_template') {
+        wp_send_json_error(array('message' => __('Invalid template', 'teacherske')));
+    }
+
+    // Get template data
+    $data = array(
+        'level' => get_post_meta($template_id, '_tkm_template_level', true),
+        'grade' => get_post_meta($template_id, '_tkm_template_grade', true),
+        'subject' => get_post_meta($template_id, '_tkm_template_subject', true),
+        'version' => get_post_meta($template_id, '_tkm_template_version', true),
+        'description' => get_post_meta($template_id, '_tkm_template_description', true),
+        'thumbnail_id' => get_post_thumbnail_id($template_id)
+    );
+
+    // Get subjects for level
+    if ($data['level']) {
+        $data['subjects'] = tkm_get_subjects_for_level($data['level']);
+    }
+
+    wp_send_json_success($data);
+}
+add_action('wp_ajax_tkm_get_template_data', 'tkm_ajax_get_template_data');

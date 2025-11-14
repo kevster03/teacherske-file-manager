@@ -305,7 +305,138 @@
                 $(this).css('border-color', '');
             }
         });
-        
+
+        // ============================================
+        // Template Application
+        // ============================================
+
+        var $templateSelect = $('#tkm_apply_template');
+        var $templateBtn = $('#tkm_apply_template_btn');
+
+        // Enable button when template is selected
+        $templateSelect.on('change', function() {
+            $templateBtn.prop('disabled', $(this).val() === '');
+        });
+
+        // Apply template data
+        $templateBtn.on('click', function() {
+            var templateId = $templateSelect.val();
+
+            if (!templateId) return;
+
+            // Show loading state
+            $templateBtn.prop('disabled', true).text('Applying...');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'tkm_get_template_data',
+                    template_id: templateId,
+                    nonce: typeof tkmAjax !== 'undefined' ? tkmAjax.templateNonce : ''
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        var data = response.data;
+
+                        // Apply level
+                        if (data.level) {
+                            $levelSelect.val(data.level).trigger('change');
+                        }
+
+                        // Wait for grade dropdown to update, then apply grade
+                        setTimeout(function() {
+                            if (data.grade) {
+                                $gradeSelect.val(data.grade);
+                            }
+                        }, 300);
+
+                        // Wait for subject dropdown to update, then apply subject
+                        setTimeout(function() {
+                            if (data.subject) {
+                                $subjectSelect.val(data.subject);
+                            }
+                        }, 400);
+
+                        // Apply version
+                        if (data.version) {
+                            $('select[name="tkm_version"]').val(data.version);
+                        }
+
+                        // Apply description (with placeholder replacement)
+                        if (data.description) {
+                            var desc = data.description;
+
+                            // Replace placeholders
+                            desc = desc.replace(/\{\{TITLE\}\}/g, $('#title').val() || '');
+                            desc = desc.replace(/\{\{GRADE\}\}/g, data.grade || '');
+                            desc = desc.replace(/\{\{SUBJECT\}\}/g, data.subject || '');
+
+                            $('#tkm_description').val(desc);
+                        }
+
+                        // Apply featured image if template has one
+                        if (data.thumbnail_id) {
+                            // WordPress featured image functionality
+                            wp.media.featuredImage.set(data.thumbnail_id);
+                        }
+
+                        // Show success message
+                        $templateBtn.text('✓ Applied!').css('color', '#28a745');
+
+                        setTimeout(function() {
+                            $templateBtn.prop('disabled', false).text('Apply Template').css('color', '');
+                        }, 2000);
+                    } else {
+                        alert('Failed to load template data');
+                        $templateBtn.prop('disabled', false).text('Apply Template');
+                    }
+                },
+                error: function() {
+                    alert('Error loading template');
+                    $templateBtn.prop('disabled', false).text('Apply Template');
+                }
+            });
+        });
+
+        // Template level change - update subjects for templates
+        var $templateLevelSelect = $('#tkm_template_level');
+        var $templateSubjectSelect = $('#tkm_template_subject');
+
+        if ($templateLevelSelect.length) {
+            $templateLevelSelect.on('change', function() {
+                var selectedLevel = $(this).val();
+
+                if (!selectedLevel) {
+                    $templateSubjectSelect.html('<option value="">— Select Level First —</option>');
+                    $templateSubjectSelect.prop('disabled', true);
+                    return;
+                }
+
+                updateSubjectDropdownForTemplate(selectedLevel, '');
+                $templateSubjectSelect.prop('disabled', false);
+            });
+        }
+
+        function updateSubjectDropdownForTemplate(levelKey, selectedSubject) {
+            if (!tkmSubjectsByLevel || !tkmSubjectsByLevel[levelKey]) {
+                $templateSubjectSelect.html('<option value="">— No subjects for this level —</option>');
+                $templateSubjectSelect.prop('disabled', true);
+                return;
+            }
+
+            var subjects = tkmSubjectsByLevel[levelKey];
+            var options = '<option value="">— Select Subject —</option>';
+
+            $.each(subjects, function(index, subject) {
+                var selected = (subject === selectedSubject) ? ' selected' : '';
+                options += '<option value="' + escapeHtml(subject) + '"' + selected + '>' + escapeHtml(subject) + '</option>';
+            });
+
+            $templateSubjectSelect.html(options);
+            $templateSubjectSelect.prop('disabled', false);
+        }
+
     });
-    
+
 })(jQuery);
