@@ -134,6 +134,10 @@
         },
 
         buildMappingInterface: function() {
+            console.log('Building mapping interface...');
+            console.log('Headers:', this.headers);
+            console.log('Auto-mapping:', this.mapping);
+
             var html = '';
 
             // Info box
@@ -164,6 +168,8 @@
                 {name: 'version', label: 'Version', required: false},
                 {name: 'author', label: 'Author', required: false}
             ];
+
+            console.log('Fields to render:', fields.map(function(f) { return f.name; }));
 
             var self = this;
             $.each(fields, function(i, field) {
