@@ -358,11 +358,17 @@ jQuery(document).ready(function($) {
         var wrapPosition = $wrap.css('position');
         var wrapDisplay = $wrap.css('display');
         var wrapAlignItems = $wrap.css('align-items');
+        var wrapHeight = $wrap.outerHeight();
+        var wrapOffsetTop = $wrap.offset().top;
 
         // Get scroll position
         var scrollTop = $(window).scrollTop();
         var sidebarTop = $sidebar.offset().top;
         var sidebarHeight = $sidebar.outerHeight();
+
+        // Check if sidebar is within sticky range
+        var stickyStart = wrapOffsetTop;
+        var stickyEnd = wrapOffsetTop + wrapHeight - sidebarHeight;
 
         log('Position: ' + position);
         log('Top: ' + top);
@@ -370,9 +376,13 @@ jQuery(document).ready(function($) {
         log('Wrap Position: ' + wrapPosition);
         log('Wrap Display: ' + wrapDisplay);
         log('Wrap Align Items: ' + wrapAlignItems);
+        log('Wrap Height: ' + wrapHeight);
+        log('Wrap Offset Top: ' + wrapOffsetTop);
         log('Scroll Top: ' + scrollTop);
         log('Sidebar Offset Top: ' + sidebarTop);
         log('Sidebar Height: ' + sidebarHeight);
+        log('Sticky Start: ' + stickyStart);
+        log('Sticky End: ' + stickyEnd);
 
         var html = '<strong>Sidebar:</strong><br>';
         html += '• Position: <span style="color:' + (position === 'sticky' || position === '-webkit-sticky' ? '#28a745' : '#d63638') + ';">' + position + '</span><br>';
@@ -383,10 +393,14 @@ jQuery(document).ready(function($) {
         html += '• Position: ' + wrapPosition + '<br>';
         html += '• Display: ' + wrapDisplay + '<br>';
         html += '• Align-Items: ' + wrapAlignItems + '<br>';
+        html += '• Height: ' + wrapHeight + 'px<br>';
+        html += '• Offset Top: ' + wrapOffsetTop + 'px<br>';
         html += '<br><strong>Scroll Info:</strong><br>';
         html += '• Window Scroll: ' + scrollTop + 'px<br>';
         html += '• Sidebar Top: ' + sidebarTop + 'px<br>';
         html += '• Sidebar Height: ' + sidebarHeight + 'px<br>';
+        html += '• Sticky Range: ' + stickyStart + 'px - ' + stickyEnd + 'px<br>';
+        html += '• In Sticky Range: <span style="color:' + (scrollTop >= stickyStart && scrollTop <= stickyEnd ? '#28a745' : '#d63638') + ';">' + (scrollTop >= stickyStart && scrollTop <= stickyEnd ? 'YES' : 'NO') + '</span><br>';
 
         // Check for issues
         html += '<br><strong>Issues:</strong><br>';
@@ -407,9 +421,20 @@ jQuery(document).ready(function($) {
             hasIssues = true;
         }
 
+        if (wrapHeight < sidebarHeight + 200) {
+            html += '<span style="color:#d63638;">✗ Parent container too short! (wrap: ' + wrapHeight + 'px, sidebar: ' + sidebarHeight + 'px)</span><br>';
+            html += '<span style="color:#856404;">→ Main content needs to be taller than sidebar</span><br>';
+            hasIssues = true;
+        }
+
+        if (stickyEnd < stickyStart) {
+            html += '<span style="color:#d63638;">✗ No sticky range! Parent shorter than sidebar.</span><br>';
+            hasIssues = true;
+        }
+
         if (!hasIssues) {
             html += '<span style="color:#28a745;">✓ No issues detected</span><br>';
-            html += '<span style="color:#856404;">Try scrolling to test sticky behavior</span>';
+            html += '<span style="color:#856404;">Scroll to test sticky behavior</span>';
         }
 
         $('#debug-details').html(html);
