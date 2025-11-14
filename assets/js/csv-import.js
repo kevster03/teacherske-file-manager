@@ -14,7 +14,57 @@
         totalErrors: [],
 
         init: function() {
+            this.log('CSV Import initialized');
+            this.log('Debug mode: ' + (tkmCSV.debug ? 'ENABLED' : 'DISABLED'));
+            this.log('User ID: ' + tkmCSV.userId);
+            this.log('User Role: ' + tkmCSV.userRole);
+            this.log('Can edit_posts: ' + tkmCSV.canEditPosts);
+            this.log('AJAX URL: ' + tkmCSV.ajaxurl);
+            this.log('Nonce: ' + tkmCSV.nonce.substring(0, 10) + '...');
             this.bindEvents();
+            this.setupDebugButtons();
+        },
+
+        log: function(message, type) {
+            type = type || 'info';
+            var timestamp = new Date().toLocaleTimeString();
+            var logMessage = '[' + timestamp + '] ' + message;
+
+            console.log(logMessage);
+
+            if (tkmCSV.debug && $('#tkm-debug-log').length) {
+                var colorMap = {
+                    'info': '#333',
+                    'success': '#28a745',
+                    'error': '#d63638',
+                    'warning': '#ffc107'
+                };
+                var color = colorMap[type] || colorMap['info'];
+                $('#tkm-debug-log').append(
+                    '<div style="color:' + color + ';margin:3px 0;">' +
+                    logMessage +
+                    '</div>'
+                );
+                // Auto-scroll to bottom
+                $('#tkm-debug-info').scrollTop($('#tkm-debug-info')[0].scrollHeight);
+            }
+        },
+
+        setupDebugButtons: function() {
+            var self = this;
+
+            $('#tkm-copy-debug').on('click', function() {
+                var debugText = $('#tkm-debug-info').text();
+                navigator.clipboard.writeText(debugText).then(function() {
+                    self.log('Debug info copied to clipboard!', 'success');
+                    alert('Debug info copied! You can now paste it to share.');
+                });
+            });
+
+            $('#tkm-clear-debug').on('click', function() {
+                $('#tkm-debug-log').html('<em>Log cleared...</em>');
+                self.log('Debug log cleared');
+            });
         },
 
         bindEvents: function() {
@@ -25,20 +75,31 @@
         handleUpload: function(e) {
             e.preventDefault();
 
+            this.log('=== UPLOAD STARTED ===', 'info');
+
             var formData = new FormData();
             var fileInput = $('#csv-file-input')[0];
 
             if (!fileInput.files[0]) {
+                this.log('No file selected', 'error');
                 alert('Please select a CSV file');
                 return;
             }
+
+            this.log('File selected: ' + fileInput.files[0].name + ' (' + fileInput.files[0].size + ' bytes)');
 
             formData.append('action', 'tkm_upload_csv');
             formData.append('nonce', $('#tkm_csv_nonce').val());
             formData.append('csv_file', fileInput.files[0]);
 
+            this.log('FormData prepared with action: tkm_upload_csv');
+            this.log('Nonce: ' + $('#tkm_csv_nonce').val().substring(0, 10) + '...');
+
             // Show loading
             $('#upload-btn').prop('disabled', true).text('Uploading...');
+            this.log('Sending AJAX request to: ' + tkmCSV.ajaxurl);
+
+            var self = this;
 
             $.ajax({
                 url: tkmCSV.ajaxurl,
@@ -46,20 +107,35 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: this.onUploadSuccess.bind(this),
-                error: function() {
-                    alert('Upload failed. Please try again.');
+                success: function(response) {
+                    self.log('AJAX Success - Raw response: ' + JSON.stringify(response), 'success');
+                    self.onUploadSuccess(response);
+                },
+                error: function(xhr, status, error) {
+                    self.log('AJAX Error - Status: ' + status, 'error');
+                    self.log('Error: ' + error, 'error');
+                    self.log('Response Text: ' + xhr.responseText, 'error');
+                    self.log('Status Code: ' + xhr.status, 'error');
+                    alert('Upload failed. Check debug log for details.');
                     $('#upload-btn').prop('disabled', false).text('Continue to Field Mapping →');
                 }
             });
         },
 
         onUploadSuccess: function(response) {
+            this.log('Processing upload response...');
+
             if (!response.success) {
+                this.log('Upload failed: ' + (response.data.message || 'Unknown error'), 'error');
                 alert(response.data.message || 'Upload failed');
                 $('#upload-btn').prop('disabled', false).text('Continue to Field Mapping →');
                 return;
             }
+
+            this.log('Upload successful!', 'success');
+            this.log('Headers found: ' + response.data.headers.join(', '));
+            this.log('Total rows: ' + response.data.row_count);
+            this.log('Temp key: ' + response.data.temp_key);
 
             // Store data
             this.headers = response.data.headers;
@@ -67,10 +143,13 @@
             this.tempKey = response.data.temp_key;
             this.mapping = response.data.auto_mapping;
 
+            this.log('Auto-mapping detected: ' + JSON.stringify(this.mapping));
+
             // Build mapping interface
             this.buildMappingInterface();
 
             // Update URL to step 2
+            this.log('Redirecting to step 2...');
             window.location.href = window.location.pathname + '?page=tkm-csv-import&step=2';
         },
 
@@ -190,6 +269,10 @@
         processBatch: function(batchStart) {
             batchStart = batchStart || 0;
 
+            this.log('=== BATCH IMPORT STARTED (batch ' + batchStart + ') ===', 'info');
+
+            var self = this;
+
             $.ajax({
                 url: tkmCSV.ajaxurl,
                 type: 'POST',
@@ -200,9 +283,15 @@
                     mapping: JSON.stringify(this.mapping),
                     batch_start: batchStart
                 },
-                success: this.onBatchComplete.bind(this),
-                error: function() {
-                    $('#import-status-text').text('Import failed. Please try again.');
+                success: function(response) {
+                    self.log('Batch response: ' + JSON.stringify(response), 'success');
+                    self.onBatchComplete(response);
+                },
+                error: function(xhr, status, error) {
+                    self.log('Batch Error - Status: ' + status, 'error');
+                    self.log('Error: ' + error, 'error');
+                    self.log('Response: ' + xhr.responseText, 'error');
+                    $('#import-status-text').text('Import failed. Check debug log.');
                 }
             });
         },

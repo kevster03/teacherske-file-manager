@@ -4,6 +4,10 @@
  * Matching TeachersKE homepage design with working features
  */
 if (!defined('ABSPATH')) exit;
+
+// Check if debug mode is enabled
+$debug_mode = isset($_GET['debug']) || get_option('tkm_sidebar_debug', false);
+
 get_header();
 
 $post_id = get_the_ID();
@@ -312,5 +316,129 @@ if($related_query->have_posts()): ?>
 <?php endif; ?>
 
 </div>
+
+<?php if ($debug_mode): ?>
+<div id="tkm-sidebar-debug" style="position:fixed;bottom:10px;right:10px;background:#fff3cd;border:2px solid #ffc107;padding:15px;border-radius:8px;max-width:400px;max-height:400px;overflow-y:auto;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+    <h4 style="margin:0 0 10px 0;color:#856404;">🔍 Sidebar Debug Panel</h4>
+    <button type="button" id="tkm-close-debug" style="position:absolute;top:5px;right:5px;background:#fff;border:1px solid #ccc;border-radius:3px;cursor:pointer;padding:2px 6px;">✕</button>
+    <div id="sidebar-debug-info" style="font-family:monospace;font-size:11px;background:#fff;padding:10px;border-radius:4px;margin-bottom:10px;">
+        <strong>Sidebar Status:</strong> Checking...<br>
+        <hr style="margin:5px 0;">
+        <div id="debug-details"></div>
+    </div>
+    <button type="button" id="tkm-copy-sidebar-debug" class="button" style="font-size:11px;padding:5px 10px;">📋 Copy Info</button>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    var $sidebar = $('.tkm-sidebar');
+    var $wrap = $('.tkm-wrap');
+    var debugInfo = [];
+
+    function log(msg) {
+        debugInfo.push(msg);
+        console.log('[Sidebar Debug] ' + msg);
+    }
+
+    function updateDebug() {
+        if (!$sidebar.length) {
+            $('#debug-details').html('<strong style="color:#d63638;">ERROR: Sidebar not found!</strong>');
+            return;
+        }
+
+        log('Sidebar element found');
+
+        // Get computed styles
+        var position = $sidebar.css('position');
+        var top = $sidebar.css('top');
+        var zIndex = $sidebar.css('z-index');
+        var display = $sidebar.css('display');
+
+        // Get parent container info
+        var wrapPosition = $wrap.css('position');
+        var wrapDisplay = $wrap.css('display');
+        var wrapAlignItems = $wrap.css('align-items');
+
+        // Get scroll position
+        var scrollTop = $(window).scrollTop();
+        var sidebarTop = $sidebar.offset().top;
+        var sidebarHeight = $sidebar.outerHeight();
+
+        log('Position: ' + position);
+        log('Top: ' + top);
+        log('Display: ' + display);
+        log('Wrap Position: ' + wrapPosition);
+        log('Wrap Display: ' + wrapDisplay);
+        log('Wrap Align Items: ' + wrapAlignItems);
+        log('Scroll Top: ' + scrollTop);
+        log('Sidebar Offset Top: ' + sidebarTop);
+        log('Sidebar Height: ' + sidebarHeight);
+
+        var html = '<strong>Sidebar:</strong><br>';
+        html += '• Position: <span style="color:' + (position === 'sticky' || position === '-webkit-sticky' ? '#28a745' : '#d63638') + ';">' + position + '</span><br>';
+        html += '• Top: ' + top + '<br>';
+        html += '• Z-Index: ' + zIndex + '<br>';
+        html += '• Display: ' + display + '<br>';
+        html += '<br><strong>Parent (.tkm-wrap):</strong><br>';
+        html += '• Position: ' + wrapPosition + '<br>';
+        html += '• Display: ' + wrapDisplay + '<br>';
+        html += '• Align-Items: ' + wrapAlignItems + '<br>';
+        html += '<br><strong>Scroll Info:</strong><br>';
+        html += '• Window Scroll: ' + scrollTop + 'px<br>';
+        html += '• Sidebar Top: ' + sidebarTop + 'px<br>';
+        html += '• Sidebar Height: ' + sidebarHeight + 'px<br>';
+
+        // Check for issues
+        html += '<br><strong>Issues:</strong><br>';
+        var hasIssues = false;
+
+        if (position !== 'sticky' && position !== '-webkit-sticky') {
+            html += '<span style="color:#d63638;">✗ Position is not sticky!</span><br>';
+            hasIssues = true;
+        }
+
+        if (top === 'auto' || top === '0px') {
+            html += '<span style="color:#d63638;">✗ Top value may be incorrect</span><br>';
+            hasIssues = true;
+        }
+
+        if (wrapAlignItems !== 'start' && wrapAlignItems !== 'flex-start') {
+            html += '<span style="color:#d63638;">✗ Parent needs align-items:start</span><br>';
+            hasIssues = true;
+        }
+
+        if (!hasIssues) {
+            html += '<span style="color:#28a745;">✓ No issues detected</span><br>';
+            html += '<span style="color:#856404;">Try scrolling to test sticky behavior</span>';
+        }
+
+        $('#debug-details').html(html);
+    }
+
+    // Update debug info
+    updateDebug();
+
+    // Update on scroll
+    var scrollTimeout;
+    $(window).on('scroll', function() {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(updateDebug, 100);
+    });
+
+    // Close button
+    $('#tkm-close-debug').on('click', function() {
+        $('#tkm-sidebar-debug').hide();
+    });
+
+    // Copy button
+    $('#tkm-copy-sidebar-debug').on('click', function() {
+        var text = 'Sidebar Debug Info:\n\n' + debugInfo.join('\n');
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Debug info copied to clipboard!');
+        });
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php get_footer(); ?>
