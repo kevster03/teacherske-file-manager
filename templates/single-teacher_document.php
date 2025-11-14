@@ -77,25 +77,28 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-meta-value{font-size:17px !important;font-weight:600 !important;color:#3b1a36 !important}
 
 /* DOWNLOAD SECTION - LIGHT YELLOW SOLID */
-.tkm-download{background:#f2ffb2 !important;padding:30px !important;border-radius:15px !important;border:1px solid #1f1f1f!important;text-align:center !important;margin-bottom:30px !important}
+.tkm-download{background:#f2ffb2 !important;padding:30px !important;border-radius:15px !important;border:1px solid #1f1f1f !important;text-align:center !important;margin-bottom:30px !important}
 
+/* DOWNLOAD STATUS - ABOVE BUTTON */
+.tkm-status{font-size:16px !important;font-weight:600 !important;color:#2b1055 !important;margin-bottom:15px !important;min-height:24px !important;transition:all .3s !important}
 
-
-/* PROGRESS BAR */
-.tkm-progress{display:none !important;width:100% !important;height:35px !important;background:#e9ecef !important;border-radius:20px !important;overflow:hidden !important;margin:15px 0 !important;border:2px solid #c92651 !important}
-.tkm-progress.show{display:block !important}
-.tkm-progress-fill{height:100% !important;background:#c92651 !important;transition:width .3s ease !important;border-radius:18px !important}
-
-/* DOWNLOAD BUTTON - SOLID COLOR */
-.tkm-btn{background:#c92651 !important;color:#fff !important;border:none !important;border-radius:12px !important;padding:18px 50px !important;font-size:20px !important;font-weight:700 !important;cursor:pointer !important;transition:all .3s !important;display:inline-block !important;text-decoration:none !important;box-shadow:0 4px 12px rgba(201,38,81,.3) !important}
+/* DOWNLOAD BUTTON - MORPHS INTO PROGRESS BAR */
+.tkm-btn-container{position:relative !important;width:100% !important;max-width:400px !important;margin:0 auto !important}
+.tkm-btn{width:100% !important;background:#c92651 !important;color:#fff !important;border:none !important;border-radius:12px !important;padding:18px 50px !important;font-size:20px !important;font-weight:700 !important;cursor:pointer !important;transition:all .3s !important;display:block !important;text-decoration:none !important;box-shadow:0 4px 12px rgba(201,38,81,.3) !important;position:relative !important;overflow:hidden !important}
 .tkm-btn:hover{background:#a01d3f !important;transform:translateY(-2px) !important;box-shadow:0 6px 18px rgba(201,38,81,.4) !important}
-.tkm-btn:disabled{opacity:.6 !important;cursor:not-allowed !important;transform:none !important}
-.tkm-btn.green{background:#28a745 !important}
+.tkm-btn:disabled{cursor:not-allowed !important}
+.tkm-btn.green{background:#28a745 !important;box-shadow:0 4px 12px rgba(40,167,69,.3) !important}
+
+/* PROGRESS FILL - INSIDE BUTTON */
+.tkm-btn-progress{position:absolute !important;left:0 !important;top:0 !important;height:100% !important;background:rgba(255,255,255,0.2) !important;transition:width .3s linear !important;border-radius:12px !important}
+
+/* BUTTON TEXT */
+.tkm-btn-text{position:relative !important;z-index:2 !important}
 
 /* FALLBACK LINK */
-.tkm-fallback{display:none !important;margin-top:15px !important;font-size:15px !important;font-weight:600 !important}
-.tkm-fallback.show{display:block !important}
-.tkm-fallback a{color:#c92651 !important;font-weight:700 !important;text-decoration:underline !important}
+.tkm-fallback{margin-top:15px !important;font-size:15px !important;font-weight:600 !important;color:#2b1055 !important}
+.tkm-fallback a{color:#c92651 !important;font-weight:700 !important;text-decoration:underline !important;cursor:pointer !important}
+.tkm-fallback a:hover{color:#a01d3f !important}
 
 /* DESCRIPTION - LIGHT BLUE SOLID */
 .tkm-description{background:#c6e0f2 !important;padding:30px !important;border-radius:15px !important;border:1px solid #3b1a36 !important;margin-bottom:30px !important}
@@ -124,8 +127,8 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-rel-content h3{font-size:16px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 8px 0 !important;line-height:1.4 !important}
 .tkm-rel-meta{font-size:13px !important;font-weight:600 !important;color:#666 !important}
 
-/* STICKY SIDEBAR - ACTUALLY WORKS */
-.tkm-sidebar{position:sticky !important;top:80px !important;align-self:start !important;background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important;max-height:calc(100vh - 100px) !important;overflow-y:auto !important}
+/* STICKY SIDEBAR - FIXED */
+.tkm-sidebar{position:sticky !important;top:80px !important;align-self:start !important;background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important}
 .tkm-sidebar h3{font-size:22px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 20px 0 !important;padding-bottom:15px !important;border-bottom:2px solid #c92651 !important}
 .tkm-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
 .tkm-widget:last-child{margin-bottom:0 !important}
@@ -204,14 +207,13 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 
 <!-- DOWNLOAD SECTION -->
 <div class="tkm-download">
-
-<div class="tkm-progress" id="tkm-progress">
-<div class="tkm-status" id="tkm-status" style="display:none !important;"></div>
-<div class="tkm-progress-fill" id="tkm-progress-fill"></div>
-</div>
+<div class="tkm-status" id="tkm-status"></div>
+<div class="tkm-btn-container">
 <button class="tkm-btn" id="tkm-btn" data-file="<?php echo esc_attr($file_url); ?>" data-post="<?php echo esc_attr($post_id); ?>" data-title="<?php echo esc_attr(get_the_title()); ?>">
- Download it Free
+<div class="tkm-btn-progress" id="tkm-btn-progress"></div>
+<span class="tkm-btn-text" id="tkm-btn-text">Download it Free</span>
 </button>
+</div>
 <div class="tkm-fallback" id="tkm-fallback"></div>
 </div>
 

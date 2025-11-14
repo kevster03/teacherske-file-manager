@@ -85,7 +85,21 @@ add_action('save_post', 'tkm_save_quick_edit');
  */
 function tkm_row_actions($actions, $post) {
     if ($post->post_type !== 'teacher_document') return $actions;
-    
+
+    // Add "Duplicate" link
+    $duplicate_url = wp_nonce_url(
+        add_query_arg(array(
+            'action' => 'tkm_duplicate_document',
+            'post' => $post->ID
+        ), admin_url('admin.php')),
+        'tkm_duplicate_' . $post->ID
+    );
+
+    $actions['duplicate'] = sprintf(
+        '<a href="%s" style="color:#c92651;">📄 Duplicate</a>',
+        esc_url($duplicate_url)
+    );
+
     // Add "View Stats" link
     if (tkm_is_tracking_enabled()) {
         $downloads = get_post_meta($post->ID, '_tkm_download_count', true);
@@ -95,16 +109,125 @@ function tkm_row_actions($actions, $post) {
             _n('download', 'downloads', intval($downloads), 'teacherske')
         );
     }
-    
+
     // Add "Copy Shortcode" link
     $actions['shortcode'] = sprintf(
         '<a href="#" onclick="navigator.clipboard.writeText(\'[teacher_document id=%d]\');alert(\'Shortcode copied!\');return false;" style="color:#c92651;">📋 Copy Shortcode</a>',
         $post->ID
     );
-    
+
     return $actions;
 }
 add_filter('post_row_actions', 'tkm_row_actions', 10, 2);
+
+/**
+ * Handle Document Duplication
+ */
+function tkm_duplicate_document() {
+    // Verify we have a post ID
+    if (empty($_GET['post'])) {
+        wp_die(__('No document to duplicate has been specified.', 'teacherske'));
+    }
+
+    $post_id = absint($_GET['post']);
+
+    // Verify nonce
+    if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'tkm_duplicate_' . $post_id)) {
+        wp_die(__('Security check failed.', 'teacherske'));
+    }
+
+    // Check permissions
+    if (!current_user_can('edit_posts')) {
+        wp_die(__('You do not have permission to duplicate documents.', 'teacherske'));
+    }
+
+    // Get original post
+    $original_post = get_post($post_id);
+
+    if (!$original_post || $original_post->post_type !== 'teacher_document') {
+        wp_die(__('Document not found or invalid type.', 'teacherske'));
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title' => $original_post->post_title . ' (Copy)',
+        'post_content' => $original_post->post_content,
+        'post_excerpt' => $original_post->post_excerpt,
+        'post_status' => 'draft', // Always create as draft
+        'post_type' => 'teacher_document',
+        'post_author' => get_current_user_id(),
+        'menu_order' => $original_post->menu_order,
+        'comment_status' => $original_post->comment_status,
+        'ping_status' => $original_post->ping_status
+    );
+
+    // Insert the new post
+    $new_post_id = wp_insert_post($new_post);
+
+    if (is_wp_error($new_post_id)) {
+        wp_die(__('Failed to duplicate document.', 'teacherske'));
+    }
+
+    // Copy all meta data
+    $meta_keys = array(
+        '_tkm_file',
+        '_tkm_level',
+        '_tkm_grade',
+        '_tkm_subject',
+        '_tkm_version',
+        '_tkm_description',
+        '_tkm_file_ext',
+        '_tkm_file_size'
+    );
+
+    foreach ($meta_keys as $meta_key) {
+        $meta_value = get_post_meta($post_id, $meta_key, true);
+        if (!empty($meta_value)) {
+            update_post_meta($new_post_id, $meta_key, $meta_value);
+        }
+    }
+
+    // Reset download count to 0 (new document)
+    update_post_meta($new_post_id, '_tkm_download_count', 0);
+
+    // Copy taxonomies (categories, subjects, etc.)
+    $taxonomies = get_object_taxonomies('teacher_document');
+    foreach ($taxonomies as $taxonomy) {
+        $terms = wp_get_post_terms($post_id, $taxonomy, array('fields' => 'ids'));
+        if (!empty($terms) && !is_wp_error($terms)) {
+            wp_set_object_terms($new_post_id, $terms, $taxonomy);
+        }
+    }
+
+    // Copy featured image
+    $thumbnail_id = get_post_thumbnail_id($post_id);
+    if ($thumbnail_id) {
+        set_post_thumbnail($new_post_id, $thumbnail_id);
+    }
+
+    // Redirect to edit the new document
+    wp_redirect(add_query_arg(array(
+        'post' => $new_post_id,
+        'action' => 'edit',
+        'duplicated' => 1
+    ), admin_url('post.php')));
+    exit;
+}
+add_action('admin_action_tkm_duplicate_document', 'tkm_duplicate_document');
+
+/**
+ * Show success notice after duplication
+ */
+function tkm_duplicate_success_notice() {
+    if (isset($_GET['duplicated']) && $_GET['duplicated'] == 1) {
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php _e('Document duplicated successfully. You are now editing the copy.', 'teacherske'); ?></p>
+        </div>
+        <?php
+    }
+}
+add_action('admin_notices', 'tkm_duplicate_success_notice');
 
 /**
  * Admin List Table CSS

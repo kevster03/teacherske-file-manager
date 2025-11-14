@@ -23,6 +23,7 @@ require_once TKM_DIR . 'includes/frontend.php';
 require_once TKM_DIR . 'includes/settings.php';
 require_once TKM_DIR . 'includes/class-download-tracker.php';
 require_once TKM_DIR . 'includes/class-bulk-importer.php';
+require_once TKM_DIR . 'admin/csv-import-page.php';
 
 register_activation_hook(__FILE__, 'tkm_activate_plugin');
 function tkm_activate_plugin() {
