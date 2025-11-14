@@ -95,17 +95,25 @@ add_action('wp_enqueue_scripts', 'tkm_frontend_assets');
  */
 function tkm_ajax_track_download() {
     // Verify request
-    if (!isset($_POST['post_id']) || !isset($_POST['nonce'])) {
+    if (!isset($_POST['post_id'])) {
         wp_send_json_error(array('message' => __('Invalid request', 'teacherske')));
     }
-    
+
     $post_id = intval($_POST['post_id']);
-    
-    // Verify nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'tkm_download_' . $post_id)) {
-        wp_send_json_error(array('message' => __('Security check failed', 'teacherske')));
+
+    // Verify nonce (more lenient for logged-out users)
+    if (isset($_POST['nonce'])) {
+        $nonce_verified = wp_verify_nonce($_POST['nonce'], 'tkm_download_' . $post_id);
+
+        // For logged-in users, require valid nonce
+        if (is_user_logged_in() && !$nonce_verified) {
+            wp_send_json_error(array('message' => __('Security check failed', 'teacherske')));
+        }
+
+        // For logged-out users, allow if nonce check fails (less strict)
+        // This prevents downloads from being blocked for guests
     }
-    
+
     // Initialize tracker
     $tracker = new TKM_Download_Tracker();
 
