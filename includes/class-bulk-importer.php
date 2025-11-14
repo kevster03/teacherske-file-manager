@@ -185,14 +185,40 @@ class TKM_Bulk_Importer {
                 'error' => sprintf(__('Invalid level: %s', 'teacherske'), $data['level'])
             );
         }
-        
-        // Validate grade
-        if (!in_array($data['grade'], $levels[$data['level']]['grades'])) {
+
+        // Normalize and validate grade
+        $grade_input = trim($data['grade']);
+
+        // Normalize grade format: "grade 8" -> "Grade 8", "grade7" -> "Grade 7"
+        $grade_normalized = preg_replace_callback(
+            '/^(grade\s*)?(\d+)$/i',
+            function($matches) {
+                return 'Grade ' . $matches[2];
+            },
+            $grade_input
+        );
+
+        // If normalization didn't work, try the original value
+        if ($grade_normalized === $grade_input) {
+            // Check if it's already in correct format
+            $grade_normalized = ucwords(strtolower($grade_input));
+        }
+
+        // Validate against expected grades for this level
+        if (!in_array($grade_normalized, $levels[$data['level']]['grades'])) {
             return array(
                 'success' => false,
-                'error' => sprintf(__('Grade "%s" not valid for level "%s"', 'teacherske'), $data['grade'], $data['level'])
+                'error' => sprintf(__('Grade "%s" (normalized to "%s") not valid for level "%s". Expected: %s', 'teacherske'),
+                    $data['grade'],
+                    $grade_normalized,
+                    $data['level'],
+                    implode(', ', $levels[$data['level']]['grades'])
+                )
             );
         }
+
+        // Use the normalized grade
+        $data['grade'] = $grade_normalized;
         
         // Validate file URL
         if (!filter_var($data['file'], FILTER_VALIDATE_URL)) {
