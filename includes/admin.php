@@ -100,15 +100,14 @@ function tkm_row_actions($actions, $post) {
         esc_url($duplicate_url)
     );
 
-    // Add "View Stats" link
-    if (tkm_is_tracking_enabled()) {
-        $downloads = get_post_meta($post->ID, '_tkm_download_count', true);
-        $actions['stats'] = sprintf(
-            '<span style="color:#2271b1;">📊 %d %s</span>',
-            intval($downloads),
-            _n('download', 'downloads', intval($downloads), 'teacherske')
-        );
-    }
+    // Add "View Stats" link (always show, even if tracking disabled)
+    $downloads = get_post_meta($post->ID, '_tkm_download_count', true);
+    $download_count = intval($downloads);
+    $actions['stats'] = sprintf(
+        '<span style="color:#2271b1;">📊 %d %s</span>',
+        $download_count,
+        _n('download', 'downloads', $download_count, 'teacherske')
+    );
 
     // Add "Copy Shortcode" link
     $actions['shortcode'] = sprintf(

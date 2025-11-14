@@ -124,14 +124,24 @@
                 try {
                     var response = JSON.parse(xhr.responseText);
 
-                    // Update counter if successful
-                    if (response.success && response.data && response.data.total && countEl) {
-                        countEl.textContent = formatNumber(response.data.total);
+                    // Update counter if successful (check for 'total' property, not truthy value)
+                    if (response.success && response.data && 'total' in response.data && countEl) {
+                        var newCount = parseInt(response.data.total) || 0;
+                        countEl.textContent = formatNumber(newCount);
+                        console.log('Download count updated to:', newCount);
+                    } else {
+                        console.log('Counter update skipped. Response:', response);
                     }
                 } catch (e) {
-                    console.log('Counter update failed');
+                    console.log('Counter update failed:', e);
                 }
+            } else {
+                console.log('AJAX request failed with status:', xhr.status);
             }
+        };
+
+        xhr.onerror = function() {
+            console.log('Network error during download tracking');
         };
 
         // Send tracking request
