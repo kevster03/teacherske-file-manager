@@ -294,14 +294,26 @@ class TKM_Bulk_Importer {
         }
 
         // Add featured image from URL or use fallback
+        $featured_image_set = false;
+        $featured_image_source = '';
+
         if (!empty($data['featured_image'])) {
             $image_result = $this->download_featured_image($data['featured_image'], $post_id);
-            // Silently fail if image download doesn't work
-        } else {
-            // Use fallback featured image if no image provided
+            if ($image_result) {
+                $featured_image_set = true;
+                $featured_image_source = 'Downloaded from URL';
+            }
+        }
+
+        // If no image was set (either no URL provided or download failed), use fallback
+        if (!$featured_image_set) {
             $fallback_image_id = get_option('tkm_fallback_featured_image', 0);
             if ($fallback_image_id) {
-                set_post_thumbnail($post_id, intval($fallback_image_id));
+                $result = set_post_thumbnail($post_id, intval($fallback_image_id));
+                if ($result) {
+                    $featured_image_set = true;
+                    $featured_image_source = 'Fallback image';
+                }
             }
         }
 
@@ -310,7 +322,8 @@ class TKM_Bulk_Importer {
 
         return array(
             'success' => true,
-            'post_id' => $post_id
+            'post_id' => $post_id,
+            'featured_image' => $featured_image_set ? $featured_image_source : 'None'
         );
     }
     
@@ -323,7 +336,8 @@ class TKM_Bulk_Importer {
      */
     private function download_featured_image($image_url, $post_id) {
         // Validate URL
-        if (!filter_var($image_url, FILTER_VALIDATE_URL)) {
+        $image_url = trim($image_url);
+        if (empty($image_url) || !filter_var($image_url, FILTER_VALIDATE_URL)) {
             return false;
         }
 
@@ -336,12 +350,29 @@ class TKM_Bulk_Importer {
         $tmp = download_url($image_url);
 
         if (is_wp_error($tmp)) {
+            // Clean up and return false
+            if (file_exists($tmp)) {
+                @unlink($tmp);
+            }
             return false;
         }
 
-        // Get file name from URL
+        // Get file name from URL - ensure it has an extension
+        $file_name = basename($image_url);
+
+        // If filename doesn't have an extension, try to detect from content type
+        if (!preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file_name)) {
+            $file_type = wp_check_filetype($tmp);
+            if ($file_type['ext']) {
+                $file_name = 'featured-image-' . time() . '.' . $file_type['ext'];
+            } else {
+                // Default to jpg if can't detect
+                $file_name = 'featured-image-' . time() . '.jpg';
+            }
+        }
+
         $file_array = array(
-            'name' => basename($image_url),
+            'name' => $file_name,
             'tmp_name' => $tmp
         );
 
