@@ -54,7 +54,7 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 <style>
 /* FORCE OVERRIDE THEME STYLES */
 .tkm-wrap,.tkm-wrap *{box-sizing:border-box !important}
-.tkm-wrap{font-family:inherit !important;font-size:18px !important;line-height:1.6 !important;color:#2b1055 !important;max-width:1200px !important;margin:40px auto !important;padding:0 20px !important;display:grid !important;grid-template-columns:2.5fr 1fr !important;gap:30px !important;align-items:start !important;min-height:1500px !important}
+.tkm-wrap{font-family:inherit !important;font-size:18px !important;line-height:1.6 !important;color:#2b1055 !important;max-width:1200px !important;margin:40px auto !important;padding:0 20px !important;display:grid !important;grid-template-columns:2.5fr 1fr !important;gap:30px !important;align-items:start !important;min-height:1500px !important;position:relative !important}
 .tkm-main{min-width:0 !important;min-height:1500px !important}
 
 /* MAIN CARD - MINIMAL BORDERS */
@@ -129,8 +129,8 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-rel-meta{font-size:13px !important;font-weight:600 !important;color:#666 !important}
 
 /* STICKY SIDEBAR - Uses Theme's Theia Sticky Sidebar Plugin */
-.tkm-sidebar{align-self:start !important;min-height:1px !important}
-.tkm-sidebar .theiaStickySidebar{padding-top:1px !important;padding-bottom:1px !important}
+.tkm-sidebar{position:relative !important;overflow:visible !important;box-sizing:border-box !important;min-height:1px !important;align-self:start !important}
+.tkm-sidebar .theiaStickySidebar{padding-top:0px !important;padding-bottom:1px !important}
 .tkm-sidebar .custom-well{background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important}
 .tkm-sidebar h3{font-size:22px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 20px 0 !important;padding-bottom:15px !important;border-bottom:2px solid #c92651 !important}
 .tkm-sidebar .widget,.tkm-sidebar .sidebar-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
