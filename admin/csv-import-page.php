@@ -31,6 +31,18 @@ function tkm_render_csv_import_page() {
         wp_die(__('You do not have permission to access this page.', 'teacherske'));
     }
 
+    // Force correct URL with post_type parameter
+    if (!isset($_GET['post_type']) || $_GET['post_type'] !== 'teacher_document') {
+        $step = isset($_GET['step']) ? intval($_GET['step']) : 1;
+        $redirect_url = add_query_arg(array(
+            'post_type' => 'teacher_document',
+            'page' => 'tkm-csv-import',
+            'step' => $step
+        ), admin_url('edit.php'));
+        wp_redirect($redirect_url);
+        exit;
+    }
+
     $step = isset($_GET['step']) ? intval($_GET['step']) : 1;
 
     ?>
