@@ -38,15 +38,15 @@
         
         intervalId = setInterval(function() {
             // Update button text
-            btn.textContent = 'Please wait (' + timeLeft + 's)';
-            
+            btn.textContent = 'Please wait ' + timeLeft + 's';
+
             // Update progress bar
             var percent = Math.round(((countdown - timeLeft) / countdown) * 100);
             progressFill.style.width = percent + '%';
-            
+
             // Update status message
             if (timeLeft > 0) {
-                status.textContent = 'Please wait ' + timeLeft + ' seconds...';
+                status.textContent = 'Please wait ' + timeLeft + 's...';
            }
             
             timeLeft--;
@@ -75,13 +75,11 @@
         var fileUrl = btn.getAttribute('data-file');
         fallback.className = 'tkm-fallback show';
         fallback.innerHTML = 'If download doesn\'t start, <a href="' + fileUrl + '" target="_blank">click here</a>';
-        
-        // Track download
-        if (tkmSettings.tracking === 'yes') {
-            trackDownload();
-        }
-        
-        // Track with Google Analytics (both GA4 and GTM)
+
+        // Track download (ALWAYS track - tracking is permanently enabled)
+        trackDownload();
+
+        // Track with Google Analytics (both GA4 & GTM)
         trackWithAnalytics();
         
         // Start download after short delay

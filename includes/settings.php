@@ -176,25 +176,27 @@ add_action('admin_post_tkm_export_documents', 'tkm_export_documents');
  * Download CSV Template
  */
 function tkm_download_csv_template() {
+    // Check permissions
     if (!current_user_can('manage_options')) {
         wp_die(__('Permission denied', 'teacherske'));
     }
-    
+
     $filename = 'teacherske-import-template-' . date('Y-m-d') . '.csv';
-    
+
+    // Set headers for CSV download
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Pragma: no-cache');
     header('Expires: 0');
-    
+
     $output = fopen('php://output', 'w');
-    
+
     // UTF-8 BOM for Excel compatibility
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-    
+
     // Headers
     fputcsv($output, array('title', 'description', 'file_url', 'level', 'grade', 'subject', 'version', 'category', 'featured_image_url'));
-    
+
     // Sample rows
     fputcsv($output, array(
         'Grade 7 Mathematics - Algebra Notes',
@@ -207,7 +209,7 @@ function tkm_download_csv_template() {
         'Notes',
         'https://example.com/images/math-cover.jpg'
     ));
-    
+
     fputcsv($output, array(
         'PP2 English Activities Term 1',
         'Complete English activities for PP2 learners',
@@ -219,7 +221,7 @@ function tkm_download_csv_template() {
         'Schemes',
         'https://example.com/images/pp2-cover.jpg'
     ));
-    
+
     fclose($output);
     exit;
 }

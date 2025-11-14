@@ -53,7 +53,7 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 <style>
 /* FORCE OVERRIDE THEME STYLES */
 .tkm-wrap,.tkm-wrap *{box-sizing:border-box !important}
-.tkm-wrap{font-family:inherit !important;font-size:18px !important;line-height:1.6 !important;color:#2b1055 !important;max-width:1200px !important;margin:40px auto !important;padding:0 20px !important;display:grid !important;grid-template-columns:2.5fr 1fr !important;gap:30px !important}
+.tkm-wrap{font-family:inherit !important;font-size:18px !important;line-height:1.6 !important;color:#2b1055 !important;max-width:1200px !important;margin:40px auto !important;padding:0 20px !important;display:grid !important;grid-template-columns:2.5fr 1fr !important;gap:30px !important;align-items:start !important}
 .tkm-main{min-width:0 !important}
 
 /* MAIN CARD - MINIMAL BORDERS */
@@ -124,8 +124,8 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-rel-content h3{font-size:16px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 8px 0 !important;line-height:1.4 !important}
 .tkm-rel-meta{font-size:13px !important;font-weight:600 !important;color:#666 !important}
 
-/* STICKY SIDEBAR - ACTUALLY WORKS */
-.tkm-sidebar{position:sticky !important;top:80px !important;align-self:start !important;background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important;max-height:calc(100vh - 100px) !important;overflow-y:auto !important}
+/* STICKY SIDEBAR - BULLETPROOF */
+.tkm-sidebar{position:-webkit-sticky !important;position:sticky !important;top:20px !important;align-self:flex-start !important;background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important;max-height:calc(100vh - 40px) !important;overflow-y:auto !important;z-index:10 !important;will-change:transform !important}
 .tkm-sidebar h3{font-size:22px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 20px 0 !important;padding-bottom:15px !important;border-bottom:2px solid #c92651 !important}
 .tkm-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
 .tkm-widget:last-child{margin-bottom:0 !important}

@@ -171,8 +171,6 @@ function tkm_add_schema_markup() {
         'about' => $subject,
         'educationalLevel' => $grade,
         'inLanguage' => get_bloginfo('language'),
-        'fileFormat' => $file_ext ? 'application/' . $file_ext : '',
-        'contentSize' => $file_size ? $file_size . ' bytes' : '',
         'contentUrl' => $file_url,
         'url' => get_permalink(),
         'keywords' => array_filter(array($grade, $level, $version, $subject))
@@ -182,10 +180,19 @@ function tkm_add_schema_markup() {
     if (has_post_thumbnail()) {
         $schema['image'] = get_the_post_thumbnail_url($post->ID, 'full');
     }
-    
-    // Add encoding format
+
+    // Add encoding format (clean MIME type)
     if ($file_ext) {
-        $schema['encodingFormat'] = $file_ext;
+        $mime_types = array(
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        );
+        $schema['encodingFormat'] = isset($mime_types[strtolower($file_ext)]) ? $mime_types[strtolower($file_ext)] : 'application/' . strtolower($file_ext);
     }
     
     ?>

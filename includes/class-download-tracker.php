@@ -17,7 +17,7 @@ class TKM_Download_Tracker {
     
     /**
      * Track a download
-     * 
+     *
      * @param int $post_id Post ID
      * @return bool True if counted, false if skipped
      */
@@ -26,33 +26,23 @@ class TKM_Download_Tracker {
         if (get_post_type($post_id) !== 'teacher_document') {
             return false;
         }
-        
-        // Check if IP tracking is enabled
+
+        // ALWAYS increment download count (tracking is permanent)
+        $this->increment_count($post_id);
+
+        // Optional: Record IP for spam prevention (but don't block counting)
         if (tkm_get_setting('track_by_ip', 'yes') === 'yes') {
             $user_ip = $this->get_user_ip();
-            
-            if (!$user_ip) {
-                // Can't get IP, still count but don't track
-                $this->increment_count($post_id);
-                return true;
+
+            if ($user_ip && !$this->is_recent_download($post_id, $user_ip)) {
+                // Record this IP and timestamp for analytics only
+                $this->record_ip($post_id, $user_ip);
             }
-            
-            // Check if this IP recently downloaded
-            if ($this->is_recent_download($post_id, $user_ip)) {
-                // Skip counting, but download is still allowed
-                return false;
-            }
-            
-            // Record this IP and timestamp
-            $this->record_ip($post_id, $user_ip);
         }
-        
-        // Increment download count
-        $this->increment_count($post_id);
-        
+
         // Fire action hook for tracking integrations
         do_action('tkm_download_tracked', $post_id, $this->get_user_ip());
-        
+
         return true;
     }
     
