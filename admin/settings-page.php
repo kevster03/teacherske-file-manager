@@ -168,110 +168,11 @@ foreach ($levels as $key => $data):
 </form>
 </div>
 
-<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:20px;margin:20px 0">
-<h3>📋 CSV Bulk Import - Coming Soon</h3>
-<p><strong>This feature is being finalized and will be available in the next update.</strong></p>
-<p>In the meantime, you can use JSON import above for bulk operations.</p>
-
-<details style="margin-top:15px">
-<summary style="cursor:pointer;font-weight:700;color:#856404">📝 Developer Notes: How to Enable CSV Import</summary>
-<div style="margin-top:15px;padding:15px;background:#fff;border:1px solid #ddd">
-<p><strong>To enable CSV import functionality:</strong></p>
-
-<p><strong>1. Download CSV Template Handler (Already Working):</strong></p>
-<p>✅ The CSV template download is already functional. Users can download template at:<br>
-<code>Settings → File Manager → Import/Export → Download CSV Template</code></p>
-
-<p><strong>2. Create CSV Import Handler (Need to Add):</strong></p>
-<p>Add this code to <code>includes/settings.php</code> after the <code>tkm_download_csv_template()</code> function:</p>
-
-<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
-/**
- * Handle CSV Upload and Import
- */
-function tkm_handle_csv_import() {
-    if (!current_user_can('manage_options')) {
-        wp_die('Permission denied');
-    }
-    
-    check_admin_referer('tkm_csv_import');
-    
-    if (!isset($_FILES['tkm_csv_file'])) {
-        wp_die('No file uploaded');
-    }
-    
-    $file = $_FILES['tkm_csv_file'];
-    
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        wp_die('Upload error: ' . $file['error']);
-    }
-    
-    // Parse CSV and import
-    $importer = new TKM_Bulk_Importer();
-    $result = $importer->import_from_csv($file['tmp_name']);
-    
-    // Redirect with message
-    wp_redirect(admin_url('options-general.php?page=tkm-settings&tab=import&imported=' . $result['success']));
-    exit;
-}
-add_action('admin_post_tkm_csv_import', 'tkm_handle_csv_import');
-</pre>
-
-<p><strong>3. Update Bulk Importer Class:</strong></p>
-<p>Add <code>import_from_csv()</code> method to <code>includes/class-bulk-importer.php</code>:</p>
-
-<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
-public function import_from_csv($file_path) {
-    $handle = fopen($file_path, 'r');
-    $header = fgetcsv($handle); // Skip header
-    $imported = 0;
-    
-    while (($data = fgetcsv($handle)) !== false) {
-        // Map CSV columns to post data
-        $post_data = array(
-            'title' => $data[0],
-            'description' => $data[1],
-            'file_url' => $data[2],
-            'level' => $data[3],
-            'grade' => $data[4],
-            'subject' => $data[5],
-            'version' => $data[6],
-            'category' => $data[7],
-            'featured_image' => $data[8]
-        );
-        
-        if ($this->import_single_document($post_data)) {
-            $imported++;
-        }
-    }
-    
-    fclose($handle);
-    return array('success' => $imported);
-}
-</pre>
-
-<p><strong>4. Enable Form in Settings:</strong></p>
-<p>Replace the "Coming Soon" section in <code>admin/settings-page.php</code> with:</p>
-
-<pre style="background:#f5f5f5;padding:10px;overflow-x:auto;font-size:12px">
-&lt;div style="background:#fff;border:1px solid #ccc;padding:20px"&gt;
-&lt;h3&gt;CSV Bulk Import&lt;/h3&gt;
-&lt;p&gt;Import multiple documents from CSV file.&lt;/p&gt;
-&lt;p&gt;&lt;a href="&lt;?php echo admin_url('admin-post.php?action=tkm_download_template'); ?&gt;" class="button"&gt;Download CSV Template&lt;/a&gt;&lt;/p&gt;
-&lt;form method="post" action="&lt;?php echo admin_url('admin-post.php'); ?&gt;" enctype="multipart/form-data"&gt;
-&lt;input type="hidden" name="action" value="tkm_csv_import"&gt;
-&lt;?php wp_nonce_field('tkm_csv_import'); ?&gt;
-&lt;input type="file" name="tkm_csv_file" accept=".csv" required&gt;
-&lt;button type="submit" class="button button-primary"&gt;Upload &amp; Import CSV&lt;/button&gt;
-&lt;/form&gt;
-&lt;/div&gt;
-</pre>
-
-<p style="margin-top:15px;padding:10px;background:#d4edda;border-left:4px solid #28a745">
-<strong>✅ Summary:</strong> CSV template download works now. To enable import, add the handler function and update the importer class as shown above. Estimated time: 15 minutes.
-</p>
-</div>
-</details>
+<div style="background:#d1ecf1;border-left:4px solid #0c5460;padding:20px;margin:20px 0">
+<h3>📊 CSV Bulk Import</h3>
+<p><strong>✅ CSV Import is now fully functional!</strong></p>
+<p>Go to <strong>Documents → Import CSV</strong> to use the 3-step import wizard with field mapping and batch processing.</p>
+<p><a href="<?php echo admin_url('edit.php?post_type=teacher_document&page=tkm-csv-import'); ?>" class="button button-primary">Open CSV Import Wizard</a></p>
 </div>
 <?php elseif ($active_tab === 'data'): ?>
 <div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:20px;margin:20px 0">

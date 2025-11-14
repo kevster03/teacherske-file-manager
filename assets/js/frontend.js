@@ -36,8 +36,8 @@
         var timeLeft = countdown;
 
         intervalId = setInterval(function() {
-            // Update button text with countdown
-            btnText.textContent = timeLeft;
+            // Update button text with countdown (show seconds)
+            btnText.textContent = timeLeft + 's';
 
             // Update progress bar (fills from left to right)
             var percent = ((countdown - timeLeft) / countdown) * 100;

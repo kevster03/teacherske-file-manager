@@ -106,27 +106,35 @@ function tkm_ajax_track_download() {
         wp_send_json_error(array('message' => __('Security check failed', 'teacherske')));
     }
     
+    // Initialize tracker
+    $tracker = new TKM_Download_Tracker();
+
     // Check if tracking is enabled
     if (tkm_get_setting('enable_tracking', 'yes') !== 'yes') {
         wp_send_json_success(array(
             'counted' => false,
+            'total' => $tracker->get_download_count($post_id),
             'message' => __('Tracking disabled', 'teacherske')
         ));
+        return;
     }
-    
+
     // Track the download
-    $tracker = new TKM_Download_Tracker();
     $result = $tracker->track_download($post_id);
-    
+
+    // Always return current count
+    $current_count = $tracker->get_download_count($post_id);
+
     if ($result) {
         wp_send_json_success(array(
             'counted' => true,
-            'total' => $tracker->get_download_count($post_id),
+            'total' => $current_count,
             'message' => __('Download tracked', 'teacherske')
         ));
     } else {
         wp_send_json_success(array(
             'counted' => false,
+            'total' => $current_count,
             'message' => __('Already counted from this IP recently', 'teacherske')
         ));
     }
@@ -145,7 +153,6 @@ function tkm_add_schema_markup() {
     
     $file_url = get_post_meta($post->ID, '_tkm_file', true);
     $file_ext = get_post_meta($post->ID, '_tkm_file_ext', true);
-    $file_size = get_post_meta($post->ID, '_tkm_file_size', true);
     $description = get_post_meta($post->ID, '_tkm_description', true);
     $grade = get_post_meta($post->ID, '_tkm_grade', true);
     $level = get_post_meta($post->ID, '_tkm_level', true);
@@ -172,7 +179,6 @@ function tkm_add_schema_markup() {
         'educationalLevel' => $grade,
         'inLanguage' => get_bloginfo('language'),
         'fileFormat' => $file_ext ? 'application/' . $file_ext : '',
-        'contentSize' => $file_size ? $file_size . ' bytes' : '',
         'contentUrl' => $file_url,
         'url' => get_permalink(),
         'keywords' => array_filter(array($grade, $level, $version, $subject))

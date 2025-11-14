@@ -366,12 +366,10 @@ class TKM_Bulk_Importer {
  * AJAX: Download CSV Template
  */
 function tkm_ajax_download_template() {
-    check_ajax_referer('tkm_bulk_import', 'nonce');
-    
     if (!current_user_can('manage_options')) {
         wp_die(__('Permission denied', 'teacherske'));
     }
-    
+
     TKM_Bulk_Importer::download_template();
 }
 add_action('wp_ajax_tkm_download_template', 'tkm_ajax_download_template');
