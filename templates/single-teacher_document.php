@@ -133,18 +133,23 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-sidebar .theiaStickySidebar{padding-top:0px !important;padding-bottom:1px !important}
 .tkm-sidebar .custom-well{background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important}
 .tkm-sidebar h3{font-size:22px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 20px 0 !important;padding-bottom:15px !important;border-bottom:2px solid #c92651 !important}
-.tkm-sidebar .widget,.tkm-sidebar .sidebar-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
+.tkm-sidebar .widget,.tkm-sidebar .sidebar-widget,.tkm-sidebar .widget_block{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
 .tkm-sidebar .widget:last-child,.tkm-sidebar .sidebar-widget:last-child{margin-bottom:0 !important}
 .tkm-sidebar .widget h4,.tkm-sidebar .sidebar-widget h4,.tkm-sidebar .widget-title{font-size:18px !important;font-weight:700 !important;color:#c92651 !important;margin:0 0 12px 0 !important}
 .tkm-sidebar .widget p,.tkm-sidebar .widget li,.tkm-sidebar .sidebar-widget p,.tkm-sidebar .sidebar-widget li{font-size:15px !important;font-weight:400 !important;color:#2b1055 !important;line-height:1.6 !important;margin:0 0 10px 0 !important}
 .tkm-sidebar .widget ul,.tkm-sidebar .sidebar-widget ul{margin:0 !important;padding:0 0 0 20px !important}
+/* Ensure all widget types get white background */
+.tkm-sidebar > div > div > *{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
 
 /* RESPONSIVE */
 @media(max-width:900px){
-.tkm-wrap{grid-template-columns:1fr !important}
+.tkm-wrap{grid-template-columns:1fr !important;min-height:auto !important}
+.tkm-main{min-height:auto !important}
 .tkm-top{grid-template-columns:1fr !important}
 .tkm-img{height:250px !important}
-.tkm-sidebar .theiaStickySidebar{position:static !important}
+.tkm-sidebar{position:static !important;overflow:visible !important;margin-top:30px !important}
+.tkm-sidebar .theiaStickySidebar{position:static !important;transform:none !important;width:auto !important;left:auto !important;top:auto !important}
+.tkm-sidebar .custom-well{margin:0 !important}
 .tkm-rel-grid{grid-template-columns:1fr !important}
 }
 @media(max-width:600px){
@@ -321,16 +326,40 @@ if($related_query->have_posts()): ?>
 </div>
 
 <script>
-// Initialize Theia Sticky Sidebar on our custom sidebar
+// Initialize Theia Sticky Sidebar on our custom sidebar - Desktop only
 jQuery(document).ready(function($) {
-    if (typeof $.fn.theiaStickySidebar !== 'undefined' && $('.tkm-sidebar').length) {
-        $('.tkm-sidebar').theiaStickySidebar({
-            additionalMarginTop: 30,
-            additionalMarginBottom: 30,
-            updateSidebarHeight: true,
-            minWidth: 900
-        });
+    var $sidebar = $('.tkm-sidebar');
+    var initialized = false;
+
+    function initSticky() {
+        if (typeof $.fn.theiaStickySidebar !== 'undefined' && $sidebar.length && $(window).width() > 900) {
+            if (!initialized) {
+                $sidebar.theiaStickySidebar({
+                    additionalMarginTop: 30,
+                    additionalMarginBottom: 30,
+                    updateSidebarHeight: true,
+                    minWidth: 900
+                });
+                initialized = true;
+            }
+        } else if (initialized && $(window).width() <= 900) {
+            // Destroy on mobile to prevent footer overlap
+            $sidebar.trigger('detach.TheiaStickySidebar');
+            initialized = false;
+        }
     }
+
+    // Initialize on load
+    initSticky();
+
+    // Re-check on window resize (debounced)
+    var resizeTimer;
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            initSticky();
+        }, 250);
+    });
 });
 </script>
 
