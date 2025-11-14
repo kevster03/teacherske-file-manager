@@ -366,7 +366,7 @@ class TKM_Bulk_Importer {
  * AJAX: Download CSV Template
  */
 function tkm_ajax_download_template() {
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_die(__('Permission denied', 'teacherske'));
     }
 

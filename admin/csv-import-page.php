@@ -16,7 +16,7 @@ function tkm_add_csv_import_menu() {
         'edit.php?post_type=teacher_document',
         __('Import CSV', 'teacherske'),
         __('Import CSV', 'teacherske'),
-        'manage_options',
+        'edit_posts',
         'tkm-csv-import',
         'tkm_render_csv_import_page'
     );
@@ -27,7 +27,7 @@ add_action('admin_menu', 'tkm_add_csv_import_menu');
  * Render CSV Import Page
  */
 function tkm_render_csv_import_page() {
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_die(__('You do not have permission to access this page.', 'teacherske'));
     }
 
@@ -267,7 +267,7 @@ function tkm_render_step_import() {
 function tkm_ajax_upload_csv() {
     check_ajax_referer('tkm_csv_upload', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error(array('message' => __('Permission denied', 'teacherske')));
     }
 
@@ -384,7 +384,7 @@ function tkm_auto_detect_mapping($headers) {
 function tkm_ajax_batch_import() {
     check_ajax_referer('tkm_csv_import', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error(array('message' => __('Permission denied', 'teacherske')));
     }
 
