@@ -128,21 +128,23 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 .tkm-rel-content h3{font-size:16px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 8px 0 !important;line-height:1.4 !important}
 .tkm-rel-meta{font-size:13px !important;font-weight:600 !important;color:#666 !important}
 
-/* STICKY SIDEBAR - BULLETPROOF */
-.tkm-sidebar{position:-webkit-sticky !important;position:sticky !important;top:80px !important;align-self:start !important;background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important;height:auto !important;max-height:none !important;overflow:visible !important}
+/* STICKY SIDEBAR - Uses Theme's Theia Sticky Sidebar Plugin */
+.tkm-sidebar{align-self:start !important;min-height:1px !important}
+.tkm-sidebar .theiaStickySidebar{padding-top:1px !important;padding-bottom:1px !important}
+.tkm-sidebar .custom-well{background:#f2dec1 !important;padding:25px !important;border-radius:15px !important;border:0px solid #c92651 !important}
 .tkm-sidebar h3{font-size:22px !important;font-weight:700 !important;color:#2b1055 !important;margin:0 0 20px 0 !important;padding-bottom:15px !important;border-bottom:2px solid #c92651 !important}
-.tkm-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
-.tkm-widget:last-child{margin-bottom:0 !important}
-.tkm-widget h4{font-size:18px !important;font-weight:700 !important;color:#c92651 !important;margin:0 0 12px 0 !important}
-.tkm-widget p,.tkm-widget li{font-size:15px !important;font-weight:400 !important;color:#2b1055 !important;line-height:1.6 !important;margin:0 0 10px 0 !important}
-.tkm-widget ul{margin:0 !important;padding:0 0 0 20px !important}
+.tkm-sidebar .widget,.tkm-sidebar .sidebar-widget{background:#fff !important;padding:20px !important;border-radius:10px !important;border:1px solid #c92651 !important;margin-bottom:20px !important}
+.tkm-sidebar .widget:last-child,.tkm-sidebar .sidebar-widget:last-child{margin-bottom:0 !important}
+.tkm-sidebar .widget h4,.tkm-sidebar .sidebar-widget h4,.tkm-sidebar .widget-title{font-size:18px !important;font-weight:700 !important;color:#c92651 !important;margin:0 0 12px 0 !important}
+.tkm-sidebar .widget p,.tkm-sidebar .widget li,.tkm-sidebar .sidebar-widget p,.tkm-sidebar .sidebar-widget li{font-size:15px !important;font-weight:400 !important;color:#2b1055 !important;line-height:1.6 !important;margin:0 0 10px 0 !important}
+.tkm-sidebar .widget ul,.tkm-sidebar .sidebar-widget ul{margin:0 !important;padding:0 0 0 20px !important}
 
 /* RESPONSIVE */
 @media(max-width:900px){
 .tkm-wrap{grid-template-columns:1fr !important}
 .tkm-top{grid-template-columns:1fr !important}
 .tkm-img{height:250px !important}
-.tkm-sidebar{position:static !important;max-height:none !important}
+.tkm-sidebar .theiaStickySidebar{position:static !important}
 .tkm-rel-grid{grid-template-columns:1fr !important}
 }
 @media(max-width:600px){
@@ -298,8 +300,10 @@ if($related_query->have_posts()): ?>
 </div>
 
 <?php if(is_active_sidebar('tkm_document_sidebar')): ?>
-<!-- STICKY SIDEBAR -->
+<!-- STICKY SIDEBAR - Uses Theme's Theia Sticky Sidebar -->
 <aside class="tkm-sidebar">
+<div class="theiaStickySidebar">
+<div class="custom-well sidebar-nav">
 
 <!-- EZOIC AD ZONE 4: SIDEBAR TOP (STICKY) -->
 <!-- ALWAYS VISIBLE ZONE - Stays in view as user scrolls -->
@@ -308,6 +312,9 @@ if($related_query->have_posts()): ?>
 
 <h3>Free Resources</h3>
 <?php dynamic_sidebar('tkm_document_sidebar'); ?>
+
+</div>
+</div>
 </aside>
 <?php endif; ?>
 
