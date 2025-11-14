@@ -230,10 +230,22 @@ The plugin uses clean section-based layouts that work perfectly with Ezoic's aut
 - **Format:** In-content ad unit (responsive)
 - **Performance:** Users engaged with content, good CTR
 
-**4. Sidebar (Sticky)**
-- **Placeholder:** Manual sidebar placement
-- **Format:** 300×600 Half Page or 300×250 stacked
-- **Performance:** Stays visible during scroll, high impressions
+**4. Sidebar (Sticky) - ⭐ PREMIUM PLACEMENT**
+- **Why It's Special:** Sidebar uses Theia Sticky Sidebar - ads stay visible during ENTIRE scroll!
+- **Placement Zones:**
+  - **Top (Highest Priority):** 300×600 Half Page - Best EPMV
+  - **Middle (After Widgets):** 300×250 Medium Rectangle - Natural break
+  - **Bottom (Optional):** 300×250 or skip to prevent clutter
+- **Desktop Strategy:**
+  - Primary: 300×600 at top (stays sticky)
+  - Secondary: 300×250 after widgets
+  - Max 2-3 sidebar ads total
+- **Mobile Strategy:**
+  - Only 300×250 at top
+  - Disable sticky on mobile (auto-handled)
+  - Skip middle/bottom ads
+- **Performance:** ⭐⭐⭐⭐⭐ Excellent - persistent visibility boosts impressions without extra ads
+- **Implementation:** See template comments for 3 strategic zones (104, 105, 106)
 
 **5. Above Related Documents**
 - **Placeholder:** "End of Content" auto placeholder

@@ -310,13 +310,85 @@ if($related_query->have_posts()): ?>
 <div class="theiaStickySidebar">
 <div class="custom-well sidebar-nav">
 
-<!-- EZOIC AD ZONE 4: SIDEBAR TOP (STICKY) -->
-<!-- ALWAYS VISIBLE ZONE - Stays in view as user scrolls -->
-<!-- Recommended sizes: 160x600 (Wide Skyscraper), 300x600 (Half Page), 300x250 (Medium Rectangle) -->
-<!-- Example: <div id="ezoic-pub-ad-placeholder-104"></div> -->
+<!-- ========================================= -->
+<!-- EZOIC SIDEBAR AD RECOMMENDATIONS         -->
+<!-- ========================================= -->
+
+<!-- EZOIC AD ZONE 1: SIDEBAR TOP (HIGHEST PRIORITY) -->
+<!-- STICKY ADVANTAGE: This ad stays visible during scroll! -->
+<!-- Desktop Recommended: 300x600 (Half Page) - Best EPMV -->
+<!-- Alternative: 300x250 (Medium Rectangle) stacked x2 -->
+<!-- Mobile: 300x250 (one unit) or disable on mobile -->
+<!-- Placement: <div id="ezoic-pub-ad-placeholder-104"></div> -->
+<!-- Performance: ⭐⭐⭐⭐⭐ Excellent viewability & engagement -->
 
 <h3>Free Resources</h3>
+
+<!-- EZOIC AD ZONE 2: AFTER HEADING, BEFORE WIDGETS -->
+<!-- Natural break point - high user attention -->
+<!-- Recommended: 300x250 (Medium Rectangle) -->
+<!-- Mobile: 300x250 (works well) -->
+<!-- Placement: <div id="ezoic-pub-ad-placeholder-105"></div> -->
+<!-- Performance: ⭐⭐⭐⭐ Great engagement -->
+
 <?php dynamic_sidebar('tkm_document_sidebar'); ?>
+
+<!-- EZOIC AD ZONE 3: SIDEBAR BOTTOM -->
+<!-- Catches engaged users who scrolled through content -->
+<!-- Recommended: 300x250 (Medium Rectangle) -->
+<!-- Alternative: 728x90 (Leaderboard) if space allows -->
+<!-- Mobile: 300x250 or skip if too many ads -->
+<!-- Placement: <div id="ezoic-pub-ad-placeholder-106"></div> -->
+<!-- Performance: ⭐⭐⭐ Good for engaged users -->
+
+<!-- ========================================= -->
+<!-- EZOIC SIDEBAR STRATEGY NOTES             -->
+<!-- ========================================= -->
+<!--
+OPTIMAL SETUP (Desktop):
+1. Top: 300x600 Half Page (sticky, high visibility)
+2. Middle: 300x250 after widgets (natural break)
+3. Bottom: Skip or light ad (prevent clutter)
+
+OPTIMAL SETUP (Mobile):
+1. Top: 300x250 Medium Rectangle
+2. Skip middle and bottom (prevent ad fatigue)
+
+STICKY SIDEBAR ADVANTAGE:
+- Top ad remains visible during entire scroll
+- Increases impressions without adding ads
+- Users see ad while reading content
+- Best EPMV location in sidebar
+
+EZOIC AUTO VS MANUAL:
+- Auto Placeholders: Let Ezoic test positions
+- Manual: Use specific IDs for control
+- Recommended: Start with auto, optimize based on data
+
+DENSITY RULES:
+- Desktop: Max 2-3 sidebar ads
+- Mobile: Max 1 sidebar ad
+- Total page: Follow Ezoic guidelines
+- Monitor EPMV vs user experience
+
+AD SIZES PRIORITY:
+1. 300x600 (Half Page) - Best EPMV
+2. 300x250 (Medium Rectangle) - Versatile
+3. 160x600 (Wide Skyscraper) - Alternative
+4. Avoid 120x600 (too narrow)
+
+INTEGRATION STEPS:
+1. Go to Ezoic Dashboard → Ad Tester
+2. Add manual placeholders or enable auto
+3. Use CSS class: ezoic-sidebar-ad
+4. Test on mobile and desktop
+5. Monitor EPMV in reporting
+
+EXAMPLE IMPLEMENTATION:
+<div class="ezoic-sidebar-ad">
+  <div id="ezoic-pub-ad-placeholder-104"></div>
+</div>
+-->
 
 </div>
 </div>
