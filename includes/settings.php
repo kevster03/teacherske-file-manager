@@ -256,7 +256,6 @@ function tkm_render_csv_import_page() {
     echo '<p><a href="' . admin_url('options-general.php?page=tkm-settings&tab=import') . '" class="button button-primary">Back to Import/Export</a></p>';
     echo '</div>';
 }
-add_action('admin_menu', 'tkm_register_csv_import_page');
 
 /**
  * Import Documents from JSON
