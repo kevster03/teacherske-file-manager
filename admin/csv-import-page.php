@@ -33,34 +33,12 @@ function tkm_render_csv_import_page() {
 
     $step = isset($_GET['step']) ? intval($_GET['step']) : 1;
 
-    // Check if debug mode is enabled
-    $debug_mode = isset($_GET['debug']) || get_option('tkm_csv_debug', false);
-
     ?>
     <div class="wrap tkm-csv-import-wrap">
         <h1 class="wp-heading-inline">
             <span class="dashicons dashicons-upload" style="color:#c92651;"></span>
             <?php _e('Import Documents from CSV', 'teacherske'); ?>
         </h1>
-
-        <?php if ($debug_mode): ?>
-        <div id="tkm-debug-panel" style="background:#fff3cd;border:2px solid #ffc107;padding:15px;margin:15px 0;border-radius:8px;">
-            <h3 style="margin:0 0 10px 0;color:#856404;">🔍 Debug Mode Active</h3>
-            <div id="tkm-debug-info" style="background:#fff;padding:10px;border-radius:4px;font-family:monospace;font-size:12px;max-height:300px;overflow-y:auto;">
-                <strong>Current User:</strong> <?php echo wp_get_current_user()->user_login; ?> (ID: <?php echo get_current_user_id(); ?>)<br>
-                <strong>User Role:</strong> <?php echo implode(', ', wp_get_current_user()->roles); ?><br>
-                <strong>Can edit_posts:</strong> <?php echo current_user_can('edit_posts') ? 'YES ✓' : 'NO ✗'; ?><br>
-                <strong>Can manage_options:</strong> <?php echo current_user_can('manage_options') ? 'YES ✓' : 'NO ✗'; ?><br>
-                <strong>AJAX URL:</strong> <?php echo admin_url('admin-ajax.php'); ?><br>
-                <strong>Page URL:</strong> <?php echo esc_url($_SERVER['REQUEST_URI']); ?><br>
-                <strong>Step:</strong> <?php echo $step; ?><br>
-                <hr style="margin:10px 0;">
-                <div id="tkm-debug-log"><em>Debug log will appear here...</em></div>
-            </div>
-            <button type="button" id="tkm-copy-debug" class="button" style="margin-top:10px;">📋 Copy Debug Info</button>
-            <button type="button" id="tkm-clear-debug" class="button" style="margin-top:10px;">🗑️ Clear Log</button>
-        </div>
-        <?php endif; ?>
 
         <hr class="wp-header-end">
 
@@ -523,18 +501,11 @@ function tkm_enqueue_csv_import_assets() {
         true
     );
 
-    // Check if debug mode is enabled
-    $debug_mode = isset($_GET['debug']) || get_option('tkm_csv_debug', false);
-
     // Localize script
     wp_localize_script('tkm-csv-import', 'tkmCSV', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('tkm_csv_import'),
-        'documentsUrl' => admin_url('edit.php?post_type=teacher_document'),
-        'debug' => $debug_mode,
-        'userId' => get_current_user_id(),
-        'userRole' => implode(', ', wp_get_current_user()->roles),
-        'canEditPosts' => current_user_can('edit_posts')
+        'documentsUrl' => admin_url('edit.php?post_type=teacher_document')
     ));
 }
 add_action('admin_enqueue_scripts', 'tkm_enqueue_csv_import_assets');

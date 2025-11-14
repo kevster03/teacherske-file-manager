@@ -1,14 +1,14 @@
 <?php
 /**
  * Plugin Name: TeachersKE File Manager
- * Version: 5.3.2
+ * Version: 5.3.3
  * Description: Ultra-optimized document management - Fast, SEO-ready, Ezoic-friendly
  * Author: TeachersKE
  * Text Domain: teacherske
  */
 if (!defined('ABSPATH')) exit;
 
-define('TKM_VERSION', '5.3.2');
+define('TKM_VERSION', '5.3.3');
 define('TKM_DIR', plugin_dir_path(__FILE__));
 define('TKM_URL', plugin_dir_url(__FILE__));
 define('TKM_BASENAME', plugin_basename(__FILE__));
