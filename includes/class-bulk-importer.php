@@ -290,7 +290,18 @@ class TKM_Bulk_Importer {
         // Add category (file_category taxonomy)
         if (!empty($data['category'])) {
             $categories = array_map('trim', explode(',', $data['category']));
-            wp_set_post_terms($post_id, $categories, 'file_category');
+            // Remove empty values
+            $categories = array_filter($categories);
+
+            if (!empty($categories)) {
+                // wp_set_post_terms will create terms if they don't exist
+                $result = wp_set_post_terms($post_id, $categories, 'file_category', false);
+
+                // Log if there's an error
+                if (is_wp_error($result)) {
+                    error_log('Category assignment failed for post ' . $post_id . ': ' . $result->get_error_message());
+                }
+            }
         }
 
         // Add featured image from URL or use fallback
@@ -309,10 +320,16 @@ class TKM_Bulk_Importer {
         if (!$featured_image_set) {
             $fallback_image_id = get_option('tkm_fallback_featured_image', 0);
             if ($fallback_image_id) {
-                $result = set_post_thumbnail($post_id, intval($fallback_image_id));
-                if ($result) {
-                    $featured_image_set = true;
-                    $featured_image_source = 'Fallback image';
+                // Verify the attachment exists and is an image
+                $attachment_url = wp_get_attachment_url($fallback_image_id);
+                if ($attachment_url && wp_attachment_is_image($fallback_image_id)) {
+                    $result = set_post_thumbnail($post_id, intval($fallback_image_id));
+                    if ($result) {
+                        $featured_image_set = true;
+                        $featured_image_source = 'Fallback image (ID: ' . $fallback_image_id . ')';
+                    }
+                } else {
+                    error_log('Fallback featured image ID ' . $fallback_image_id . ' is not valid or not an image');
                 }
             }
         }
@@ -320,10 +337,17 @@ class TKM_Bulk_Importer {
         // Initialize download tracking
         update_post_meta($post_id, '_tkm_download_count', 0);
 
+        // Get category names for debugging
+        $assigned_categories = wp_get_post_terms($post_id, 'file_category', array('fields' => 'names'));
+        $category_info = !empty($assigned_categories) && !is_wp_error($assigned_categories)
+            ? implode(', ', $assigned_categories)
+            : 'None';
+
         return array(
             'success' => true,
             'post_id' => $post_id,
-            'featured_image' => $featured_image_set ? $featured_image_source : 'None'
+            'featured_image' => $featured_image_set ? $featured_image_source : 'None',
+            'categories' => $category_info
         );
     }
     

@@ -79,7 +79,19 @@ $settings = array(
 <tr><th scope="row">Fallback Featured Image</th><td>
 <?php
 $fallback_image_id = intval($settings['fallback_featured_image']);
-$fallback_image_url = $fallback_image_id ? wp_get_attachment_url($fallback_image_id) : '';
+// Validate that the attachment exists and is an image
+if ($fallback_image_id) {
+    $fallback_image_url = wp_get_attachment_url($fallback_image_id);
+    // If attachment doesn't exist or is not an image, clear it
+    if (!$fallback_image_url || !wp_attachment_is_image($fallback_image_id)) {
+        $fallback_image_id = 0;
+        $fallback_image_url = '';
+        update_option('tkm_fallback_featured_image', 0);
+        echo '<div class="notice notice-warning inline"><p>Previous fallback image was removed (invalid or deleted). Please select a new one.</p></div>';
+    }
+} else {
+    $fallback_image_url = '';
+}
 ?>
 <div style="margin-bottom:10px;">
     <input type="hidden" name="tkm_fallback_featured_image" id="tkm_fallback_featured_image" value="<?php echo esc_attr($fallback_image_id); ?>">
