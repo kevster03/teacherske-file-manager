@@ -1,17 +1,19 @@
 /**
- * CSV Import JavaScript
- * Handles the complete 3-step import workflow
+ * CSV Import JavaScript - Single Page Approach
+ * All steps happen on one page - no redirects
  */
 (function($) {
     'use strict';
 
     var CSVImport = {
+        // Data storage
         tempKey: null,
         totalRows: 0,
         headers: [],
         mapping: {},
         totalImported: 0,
         totalErrors: [],
+        currentStep: 1,
 
         init: function() {
             this.bindEvents();
@@ -20,19 +22,76 @@
         bindEvents: function() {
             // Step 1: File upload
             $('#tkm-upload-form').on('submit', this.handleUpload.bind(this));
+
+            // File selection
+            $('#select-file-btn').on('click', function() {
+                $('#csv-file-input').click();
+            });
+
+            $('#csv-file-input').on('change', this.handleFileSelect.bind(this));
+
+            // Drag and drop
+            var $dropZone = $('#tkm-drop-zone');
+            $dropZone.on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+
+            $dropZone.on('dragleave', function() {
+                $(this).removeClass('dragover');
+            });
+
+            $dropZone.on('drop', this.handleFileDrop.bind(this));
+        },
+
+        handleFileSelect: function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                this.displayFileInfo(file);
+            }
+        },
+
+        handleFileDrop: function(e) {
+            e.preventDefault();
+            $('#tkm-drop-zone').removeClass('dragover');
+
+            var files = e.originalEvent.dataTransfer.files;
+            if (files.length > 0) {
+                $('#csv-file-input')[0].files = files;
+                this.displayFileInfo(files[0]);
+            }
+        },
+
+        displayFileInfo: function(file) {
+            // Validate file type
+            if (!file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            // Validate file size (10MB)
+            if (file.size > 10485760) {
+                alert('File is too large. Maximum size is 10MB.');
+                return;
+            }
+
+            // Show file info
+            $('#file-name').text(file.name);
+            $('#file-size').text((file.size / 1024).toFixed(2) + ' KB');
+            $('#file-info').show();
+            $('#upload-btn').prop('disabled', false);
         },
 
         handleUpload: function(e) {
             e.preventDefault();
 
-            var formData = new FormData();
             var fileInput = $('#csv-file-input')[0];
-
             if (!fileInput.files[0]) {
                 alert('Please select a CSV file');
                 return;
             }
 
+            var formData = new FormData();
             formData.append('action', 'tkm_upload_csv');
             formData.append('nonce', $('#tkm_csv_nonce').val());
             formData.append('csv_file', fileInput.files[0]);
@@ -61,39 +120,30 @@
                 return;
             }
 
-            // Store data
+            // Store data in memory
             this.headers = response.data.headers;
             this.totalRows = response.data.row_count;
             this.tempKey = response.data.temp_key;
-            this.mapping = response.data.auto_mapping;
+            this.mapping = response.data.auto_mapping || {};
 
-            // Save to sessionStorage for step 2
-            sessionStorage.setItem('tkm_temp_key', this.tempKey);
-            sessionStorage.setItem('tkm_headers', JSON.stringify(this.headers));
-            sessionStorage.setItem('tkm_total_rows', this.totalRows);
-            sessionStorage.setItem('tkm_mapping', JSON.stringify(this.mapping));
+            // Build mapping interface
+            this.buildMappingInterface();
 
-            // Update URL to step 2 (preserve post_type parameter)
-            window.location.href = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=2';
+            // Go to step 2 (NO REDIRECT - just show/hide)
+            this.goToStep(2);
         },
 
         buildMappingInterface: function() {
-            var $container = $('#mapping-interface');
-
-            if (!$container.length) {
-                return; // Not on mapping page yet, will build after redirect
-            }
-
-            var html = '<form id="mapping-form">';
-            html += '<input type="hidden" name="temp_key" value="' + this.tempKey + '">';
-            html += '<input type="hidden" name="nonce" id="tkm_csv_import_nonce" value="' + tkmCSV.nonce + '">';
+            var html = '';
 
             // Info box
             html += '<div style="background:#f0f6fc;padding:15px;border-radius:6px;margin-bottom:20px;">';
             html += '<p style="margin:0;"><strong>CSV File:</strong> ' + this.totalRows + ' rows detected</p>';
+            html += '<p style="margin:5px 0 0;"><strong>Columns:</strong> ' + this.headers.join(', ') + '</p>';
             html += '</div>';
 
             // Mapping table
+            html += '<form id="mapping-form">';
             html += '<table class="tkm-field-mapping-table">';
             html += '<thead><tr>';
             html += '<th>Plugin Field</th>';
@@ -134,24 +184,21 @@
 
             html += '</tbody></table>';
 
-            // Preview section
-            html += '<div class="tkm-preview-rows">';
-            html += '<h3 style="margin-top:0;">Preview (Headers)</h3>';
-            html += '<code>' + self.headers.join(', ') + '</code>';
-            html += '</div>';
-
             // Buttons
             html += '<p>';
-            html += '<a href="' + window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import" class="button">← Back</a> ';
+            html += '<button type="button" class="button" id="back-to-upload">← Back</button> ';
             html += '<button type="submit" class="button button-primary button-large">Start Import →</button>';
             html += '</p>';
 
             html += '</form>';
 
-            $container.html(html);
+            $('#mapping-interface').html(html);
 
-            // Bind form submit
+            // Bind events
             $('#mapping-form').on('submit', this.startImport.bind(this));
+            $('#back-to-upload').on('click', function() {
+                CSVImport.goToStep(1);
+            });
         },
 
         startImport: function(e) {
@@ -186,15 +233,19 @@
             this.totalImported = 0;
             this.totalErrors = [];
 
-            // Save updated mapping to sessionStorage for step 3
-            sessionStorage.setItem('tkm_mapping', JSON.stringify(this.mapping));
+            // Go to step 3 and start processing
+            this.goToStep(3);
 
-            // Redirect to step 3 (preserve post_type parameter)
-            window.location.href = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=3';
+            // Start import after a brief delay
+            setTimeout(function() {
+                CSVImport.processBatch(0);
+            }, 500);
         },
 
         processBatch: function(batchStart) {
             batchStart = batchStart || 0;
+
+            $('#import-status-text').text('Processing...');
 
             $.ajax({
                 url: tkmCSV.ajaxurl,
@@ -284,55 +335,60 @@
             // Actions
             html += '<p style="margin-top:30px;">';
             html += '<a href="' + tkmCSV.documentsUrl + '" class="button button-primary button-large">View Imported Documents</a> ';
-            html += '<a href="' + window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import" class="button button-large">Import Another File</a>';
+            html += '<button type="button" class="button button-large" id="import-another">Import Another File</button>';
             html += '</p>';
 
             $('#import-results').html(html).show();
+
+            // Bind import another button
+            $('#import-another').on('click', function() {
+                // Reset everything
+                CSVImport.tempKey = null;
+                CSVImport.headers = [];
+                CSVImport.mapping = {};
+                CSVImport.totalRows = 0;
+                CSVImport.totalImported = 0;
+                CSVImport.totalErrors = [];
+
+                // Reset form
+                $('#tkm-upload-form')[0].reset();
+                $('#file-info').hide();
+                $('#upload-btn').prop('disabled', true);
+
+                // Go back to step 1
+                CSVImport.goToStep(1);
+            });
+        },
+
+        goToStep: function(step) {
+            // Hide all steps
+            $('.tkm-step-content').hide();
+
+            // Show target step
+            $('#tkm-step-' + step).show();
+
+            // Update step indicators
+            $('.tkm-step').removeClass('active completed');
+
+            $('.tkm-step').each(function() {
+                var stepNum = parseInt($(this).data('step'));
+                if (stepNum < step) {
+                    $(this).addClass('completed');
+                } else if (stepNum === step) {
+                    $(this).addClass('active');
+                }
+            });
+
+            this.currentStep = step;
+
+            // Scroll to top
+            $('html, body').animate({ scrollTop: 0 }, 300);
         }
     };
 
     // Initialize when document ready
     $(document).ready(function() {
         CSVImport.init();
-
-        var urlParams = new URLSearchParams(window.location.search);
-
-        // Restore data and build interface on step 2
-        if (urlParams.get('step') === '2') {
-            var tempKey = sessionStorage.getItem('tkm_temp_key');
-            var headers = sessionStorage.getItem('tkm_headers');
-            var totalRows = sessionStorage.getItem('tkm_total_rows');
-            var mapping = sessionStorage.getItem('tkm_mapping');
-
-            if (tempKey && headers) {
-                CSVImport.tempKey = tempKey;
-                CSVImport.headers = JSON.parse(headers);
-                CSVImport.totalRows = parseInt(totalRows);
-                CSVImport.mapping = mapping ? JSON.parse(mapping) : {};
-
-                // Build the mapping interface
-                CSVImport.buildMappingInterface();
-            }
-        }
-
-        // Auto-start import on step 3
-        if (urlParams.get('step') === '3') {
-            // Get data from sessionStorage
-            var tempKey = sessionStorage.getItem('tkm_temp_key');
-            var mapping = sessionStorage.getItem('tkm_mapping');
-            var totalRows = sessionStorage.getItem('tkm_total_rows');
-
-            if (tempKey && mapping) {
-                CSVImport.tempKey = tempKey;
-                CSVImport.mapping = JSON.parse(mapping);
-                CSVImport.totalRows = parseInt(totalRows);
-
-                // Start processing
-                setTimeout(function() {
-                    CSVImport.processBatch(0);
-                }, 500);
-            }
-        }
     });
 
 })(jQuery);

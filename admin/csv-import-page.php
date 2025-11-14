@@ -33,17 +33,13 @@ function tkm_render_csv_import_page() {
 
     // Force correct URL with post_type parameter
     if (!isset($_GET['post_type']) || $_GET['post_type'] !== 'teacher_document') {
-        $step = isset($_GET['step']) ? intval($_GET['step']) : 1;
         $redirect_url = add_query_arg(array(
             'post_type' => 'teacher_document',
-            'page' => 'tkm-csv-import',
-            'step' => $step
+            'page' => 'tkm-csv-import'
         ), admin_url('edit.php'));
         wp_redirect($redirect_url);
         exit;
     }
-
-    $step = isset($_GET['step']) ? intval($_GET['step']) : 1;
 
     ?>
     <div class="wrap tkm-csv-import-wrap">
@@ -56,35 +52,34 @@ function tkm_render_csv_import_page() {
 
         <!-- Progress Steps -->
         <div class="tkm-import-steps">
-            <div class="tkm-step <?php echo $step >= 1 ? 'active' : ''; ?> <?php echo $step > 1 ? 'completed' : ''; ?>">
+            <div class="tkm-step active" data-step="1">
                 <span class="step-number">1</span>
                 <span class="step-title"><?php _e('Upload File', 'teacherske'); ?></span>
             </div>
-            <div class="tkm-step <?php echo $step >= 2 ? 'active' : ''; ?> <?php echo $step > 2 ? 'completed' : ''; ?>">
+            <div class="tkm-step" data-step="2">
                 <span class="step-number">2</span>
                 <span class="step-title"><?php _e('Map Fields', 'teacherske'); ?></span>
             </div>
-            <div class="tkm-step <?php echo $step >= 3 ? 'active' : ''; ?>">
+            <div class="tkm-step" data-step="3">
                 <span class="step-number">3</span>
                 <span class="step-title"><?php _e('Import', 'teacherske'); ?></span>
             </div>
         </div>
 
-        <?php
-        switch ($step) {
-            case 1:
-                tkm_render_step_upload();
-                break;
-            case 2:
-                tkm_render_step_mapping();
-                break;
-            case 3:
-                tkm_render_step_import();
-                break;
-            default:
-                tkm_render_step_upload();
-        }
-        ?>
+        <!-- Step 1: Upload -->
+        <div id="tkm-step-1" class="tkm-step-content">
+            <?php tkm_render_step_upload(); ?>
+        </div>
+
+        <!-- Step 2: Mapping -->
+        <div id="tkm-step-2" class="tkm-step-content" style="display:none;">
+            <?php tkm_render_step_mapping(); ?>
+        </div>
+
+        <!-- Step 3: Import -->
+        <div id="tkm-step-3" class="tkm-step-content" style="display:none;">
+            <?php tkm_render_step_import(); ?>
+        </div>
     </div>
 
     <style>
