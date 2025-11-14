@@ -41,7 +41,7 @@
             $('#upload-btn').prop('disabled', true).text('Uploading...');
 
             $.ajax({
-                url: ajaxurl,
+                url: tkmCSV.ajaxurl,
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -191,7 +191,7 @@
             batchStart = batchStart || 0;
 
             $.ajax({
-                url: ajaxurl,
+                url: tkmCSV.ajaxurl,
                 type: 'POST',
                 data: {
                     action: 'tkm_batch_import',

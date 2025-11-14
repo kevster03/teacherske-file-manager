@@ -99,16 +99,45 @@
      */
     function triggerDownload() {
         var fileUrl = btn.getAttribute('data-file');
-        if (!fileUrl) return;
 
-        // Create invisible link and click it
-        var link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = '';
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        if (!fileUrl) {
+            console.error('Download failed: No file URL found');
+            fallback.innerHTML = '<span style="color:red;">Error: File URL not found. Please contact the administrator.</span>';
+            return;
+        }
+
+        console.log('Triggering download for:', fileUrl);
+
+        // Method 1: Try creating invisible link (works for most browsers)
+        try {
+            var link = document.createElement('a');
+            link.href = fileUrl;
+            link.download = fileUrl.split('/').pop(); // Extract filename from URL
+            link.target = '_blank'; // Open in new tab as fallback
+            link.style.display = 'none';
+            document.body.appendChild(link);
+
+            // Trigger click
+            if (link.click) {
+                link.click();
+            } else if (document.createEvent) {
+                // Fallback for older browsers
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                link.dispatchEvent(event);
+            }
+
+            // Clean up
+            setTimeout(function() {
+                document.body.removeChild(link);
+            }, 100);
+
+            console.log('Download triggered successfully');
+        } catch (e) {
+            console.error('Download trigger failed:', e);
+            // Method 2: Direct window.open fallback
+            window.open(fileUrl, '_blank');
+        }
     }
 
     /**

@@ -52,6 +52,21 @@ function tkm_register_sidebars() {
 add_action('widgets_init', 'tkm_register_sidebars');
 
 /**
+ * Track Page View
+ */
+function tkm_track_page_view() {
+    if (!is_singular('teacher_document')) return;
+
+    $post_id = get_the_ID();
+    if (!$post_id) return;
+
+    // Initialize view tracker
+    $tracker = new TKM_View_Tracker();
+    $tracker->track_view($post_id);
+}
+add_action('wp_head', 'tkm_track_page_view', 1);
+
+/**
  * Enqueue Frontend Assets
  */
 function tkm_frontend_assets() {

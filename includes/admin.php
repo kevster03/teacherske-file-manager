@@ -101,12 +101,12 @@ function tkm_row_actions($actions, $post) {
     );
 
     // Add "View Stats" link (always show, even if tracking disabled)
-    $downloads = get_post_meta($post->ID, '_tkm_download_count', true);
-    $download_count = intval($downloads);
+    $views = get_post_meta($post->ID, '_tkm_view_count', true);
+    $view_count = intval($views);
     $actions['stats'] = sprintf(
-        '<span style="color:#2271b1;">📊 %d %s</span>',
-        $download_count,
-        _n('download', 'downloads', $download_count, 'teacherske')
+        '<span style="color:#2271b1;">👁️ %d %s</span>',
+        $view_count,
+        _n('view', 'views', $view_count, 'teacherske')
     );
 
     // Add "Copy Shortcode" link
@@ -263,14 +263,14 @@ add_action('wp_dashboard_setup', 'tkm_dashboard_widget');
 
 function tkm_dashboard_widget_content() {
     $total = wp_count_posts('teacher_document')->publish;
-    
+
     global $wpdb;
-    $total_downloads = $wpdb->get_var(
-        "SELECT SUM(CAST(meta_value AS UNSIGNED)) 
-        FROM {$wpdb->postmeta} 
-        WHERE meta_key = '_tkm_download_count'"
+    $total_views = $wpdb->get_var(
+        "SELECT SUM(CAST(meta_value AS UNSIGNED))
+        FROM {$wpdb->postmeta}
+        WHERE meta_key = '_tkm_view_count'"
     );
-    $total_downloads = $total_downloads ? intval($total_downloads) : 0;
+    $total_views = $total_views ? intval($total_views) : 0;
     
     ?>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
@@ -280,8 +280,8 @@ function tkm_dashboard_widget_content() {
         </div>
         
         <div style="text-align:center;padding:15px;background:#f0f0f1;border-radius:5px;">
-            <div style="font-size:32px;font-weight:bold;color:#2271b1;"><?php echo number_format($total_downloads); ?></div>
-            <div style="font-size:12px;color:#666;margin-top:5px;"><?php _e('Total Downloads', 'teacherske'); ?></div>
+            <div style="font-size:32px;font-weight:bold;color:#2271b1;"><?php echo number_format($total_views); ?></div>
+            <div style="font-size:12px;color:#666;margin-top:5px;"><?php _e('Total Views', 'teacherske'); ?></div>
         </div>
     </div>
     

@@ -16,6 +16,7 @@ $description = get_post_meta($post_id, '_tkm_description', true);
 $file_ext = get_post_meta($post_id, '_tkm_file_ext', true);
 $file_size = get_post_meta($post_id, '_tkm_file_size', true);
 $download_count = intval(get_post_meta($post_id, '_tkm_download_count', true));
+$view_count = intval(get_post_meta($post_id, '_tkm_view_count', true));
 $categories = wp_get_post_terms($post_id, 'file_category', array('fields' => 'names'));
 $category = !empty($categories) ? $categories[0] : '';
 $levels = tkm_get_levels();
@@ -44,7 +45,7 @@ $schema = array(
 'url' => get_permalink(),
 'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => get_permalink()),
 'keywords' => implode(', ', array_filter(array($grade, $subject, $level_label, $version, 'Kenya CBC'))),
-'interactionStatistic' => array('@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/DownloadAction', 'userInteractionCount' => $download_count),
+'interactionStatistic' => array('@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/ViewAction', 'userInteractionCount' => $view_count),
 'isAccessibleForFree' => true
 );
 if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'url' => get_the_post_thumbnail_url($post_id, 'full'), 'width' => 1200, 'height' => 630);
@@ -247,8 +248,8 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 </div>
 <?php endif; ?>
 <div class="tkm-pill">
-<span class="tkm-pill-label">⬇️ Downloads:</span>
-<span class="tkm-pill-value" id="tkm-count"><?php echo number_format($download_count); ?></span>
+<span class="tkm-pill-label">👁️ Views:</span>
+<span class="tkm-pill-value"><?php echo number_format($view_count); ?></span>
 </div>
 </div>
 
@@ -282,9 +283,9 @@ if($related_query->have_posts()): ?>
 <div class="tkm-rel-content">
 <h3><?php the_title(); ?></h3>
 <div class="tkm-rel-meta">
-<?php echo esc_html(strtoupper(get_post_meta(get_the_ID(),'_tkm_file_ext',true))); ?> • 
-<?php echo esc_html(get_post_meta(get_the_ID(),'_tkm_grade',true)); ?> • 
-<?php echo number_format(intval(get_post_meta(get_the_ID(),'_tkm_download_count',true))); ?> downloads
+<?php echo esc_html(strtoupper(get_post_meta(get_the_ID(),'_tkm_file_ext',true))); ?> •
+<?php echo esc_html(get_post_meta(get_the_ID(),'_tkm_grade',true)); ?> •
+<?php echo number_format(intval(get_post_meta(get_the_ID(),'_tkm_view_count',true))); ?> views
 </div>
 </div>
 </a>
