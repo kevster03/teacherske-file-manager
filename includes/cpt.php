@@ -146,7 +146,7 @@ function tkm_admin_columns($columns) {
             $new_columns['tkm_level'] = __('Level', 'teacherske');
             $new_columns['tkm_grade'] = __('Grade', 'teacherske');
             $new_columns['tkm_subject'] = __('Subject', 'teacherske');
-            $new_columns['tkm_downloads'] = __('Downloads', 'teacherske');
+            $new_columns['tkm_views'] = __('Views', 'teacherske');
         }
     }
     
@@ -184,9 +184,9 @@ function tkm_admin_column_content($column, $post_id) {
             echo $subject ? esc_html($subject) : '—';
             break;
             
-        case 'tkm_downloads':
-            $count = intval(get_post_meta($post_id, '_tkm_download_count', true));
-            echo '<strong style="color:#2271b1">' . number_format($count) . '</strong>';
+        case 'tkm_views':
+            $count = intval(get_post_meta($post_id, '_tkm_view_count', true));
+            echo '<strong style="color:#2271b1">👁️ ' . number_format($count) . '</strong>';
             break;
     }
 }
@@ -198,7 +198,7 @@ add_action('manage_teacher_document_posts_custom_column', 'tkm_admin_column_cont
 function tkm_sortable_columns($columns) {
     $columns['tkm_grade'] = 'tkm_grade';
     $columns['tkm_level'] = 'tkm_level';
-    $columns['tkm_downloads'] = 'tkm_downloads';
+    $columns['tkm_views'] = 'tkm_views';
     return $columns;
 }
 add_filter('manage_edit-teacher_document_sortable_columns', 'tkm_sortable_columns');
@@ -217,8 +217,8 @@ function tkm_column_orderby($query) {
     } elseif ($orderby === 'tkm_level') {
         $query->set('meta_key', '_tkm_level');
         $query->set('orderby', 'meta_value');
-    } elseif ($orderby === 'tkm_downloads') {
-        $query->set('meta_key', '_tkm_download_count');
+    } elseif ($orderby === 'tkm_views') {
+        $query->set('meta_key', '_tkm_view_count');
         $query->set('orderby', 'meta_value_num');
     }
 }
