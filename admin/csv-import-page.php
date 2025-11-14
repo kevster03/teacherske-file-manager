@@ -362,7 +362,9 @@ function tkm_auto_detect_mapping($headers) {
         'file' => array('file', 'url', 'link', 'fileurl', 'file_url', 'document_url', 'download'),
         'level' => array('level', 'education_level', 'edu_level', 'class_level'),
         'grade' => array('grade', 'class', 'year', 'std', 'form'),
-        'subject' => array('subject', 'topic', 'course', 'category'),
+        'subject' => array('subject', 'topic', 'course'),
+        'category' => array('category', 'cat', 'type', 'file_category', 'document_type'),
+        'featured_image' => array('featured_image', 'image', 'thumbnail', 'cover', 'picture', 'featured', 'image_url', 'thumbnail_url'),
         'version' => array('version', 'edition', 'year', 'release'),
         'author' => array('author', 'creator', 'uploaded_by', 'by')
     );
