@@ -152,12 +152,12 @@ class TKM_Bulk_Importer {
     
     /**
      * Import single row
-     * 
+     *
      * @param array $row CSV row data
      * @param array $mapping Field mapping
      * @return array Result
      */
-    private function import_row($row, $mapping) {
+    public function import_row($row, $mapping) {
         // Extract mapped data
         $data = array();
         

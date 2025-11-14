@@ -171,15 +171,93 @@ title,description,file,level,grade,version,subject,author
 ```
 
 **Files Modified:**
-- `admin/csv-import-page.php` (NEW FILE - complete UI)
-- `includes/class-bulk-importer.php` (lines 24-48) - 10MB limit
+- `admin/csv-import-page.php` (NEW FILE - ~512 lines)
+  - Complete 3-step wizard UI
+  - AJAX upload handler (`tkm_ajax_upload_csv`)
+  - Auto-detection function (`tkm_auto_detect_mapping`)
+  - Batch processing handler (`tkm_ajax_batch_import`)
+  - Script enqueuing with localized variables
+- `assets/js/csv-import.js` (NEW FILE - ~320 lines)
+  - File upload with FormData
+  - Dynamic mapping interface generation
+  - Batch processing loop with progress tracking
+  - SessionStorage for multi-step persistence
+  - Results display with error reporting
+- `includes/class-bulk-importer.php` (lines 24, 160)
+  - MAX_FILE_SIZE increased from 5MB to 10MB
+  - `import_row()` method changed from private to public (for AJAX access)
 - `teacherske-file-manager.php` (line 26) - Include import page
 
+**Technical Implementation:**
+
+**Upload Handler (admin/csv-import-page.php:267-343):**
+```php
+function tkm_ajax_upload_csv() {
+    // Validates file type (.csv only)
+    // Checks file size (10MB max)
+    // Moves to temp directory: wp-uploads/tkm-csv-temp/
+    // Counts total rows for progress tracking
+    // Stores file path in transient (1 hour expiration)
+    // Returns: headers, row_count, auto_mapping, temp_key
+}
+```
+
+**Auto-Detection (admin/csv-import-page.php:348-379):**
+```php
+function tkm_auto_detect_mapping($headers) {
+    // Pattern matching for common column names
+    // Maps "class" → grade, "topic" → subject, etc.
+    // Returns suggested field mapping array
+}
+```
+
+**Batch Processing (admin/csv-import-page.php:384-476):**
+```php
+function tkm_ajax_batch_import() {
+    // Processes 30 rows per AJAX call
+    // Retrieves CSV file from transient
+    // Tracks progress with batch_start parameter
+    // Calls $importer->import_row() for each row
+    // Returns: imported count, errors, has_more flag
+    // Cleans up temp file when complete
+}
+```
+
+**Frontend JavaScript (assets/js/csv-import.js):**
+```javascript
+CSVImport = {
+    handleUpload: function() {
+        // FormData upload to tkm_ajax_upload_csv
+        // Stores temp_key, headers, mapping
+        // Redirects to step 2
+    },
+    buildMappingInterface: function() {
+        // Dynamically generates mapping table
+        // Pre-selects based on auto_mapping
+        // Shows required field indicators
+    },
+    startImport: function() {
+        // Validates required fields
+        // Stores data in sessionStorage
+        // Redirects to step 3
+    },
+    processBatch: function(batchStart) {
+        // AJAX loop for batch processing
+        // Updates progress bar in real-time
+        // Continues until has_more = false
+    }
+}
+```
+
 **Important Notes:**
+- ✅ **Fully Implemented** - All AJAX handlers and frontend JavaScript complete
 - All imports are created as **Draft** status for review
 - File extension and size auto-detected when possible
 - IP-based duplicate prevention still applies
-- Upload handling needs server-side implementation
+- Temp files auto-delete after 1 hour (transient expiration)
+- SessionStorage persists data across step redirects
+- Batch size of 30 rows prevents server timeouts
+- Progress updates happen in real-time during import
 
 ---
 

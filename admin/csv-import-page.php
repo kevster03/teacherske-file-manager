@@ -119,7 +119,7 @@ function tkm_render_step_upload() {
         <p><?php _e('Upload a CSV file containing your document data. Maximum file size: 10MB. Batch size: 30 rows per batch.', 'teacherske'); ?></p>
 
         <form method="post" enctype="multipart/form-data" id="tkm-upload-form">
-            <?php wp_nonce_field('tkm_csv_upload', 'tkm_csv_nonce'); ?>
+            <input type="hidden" id="tkm_csv_nonce" value="<?php echo wp_create_nonce('tkm_csv_upload'); ?>" />
 
             <div class="tkm-file-upload-area" id="tkm-drop-zone">
                 <div class="upload-icon">📄</div>
@@ -260,3 +260,252 @@ function tkm_render_step_import() {
     </div>
     <?php
 }
+
+/**
+ * AJAX: Handle CSV Upload
+ */
+function tkm_ajax_upload_csv() {
+    check_ajax_referer('tkm_csv_upload', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Permission denied', 'teacherske')));
+    }
+
+    // Check if file was uploaded
+    if (empty($_FILES['csv_file'])) {
+        wp_send_json_error(array('message' => __('No file uploaded', 'teacherske')));
+    }
+
+    $file = $_FILES['csv_file'];
+
+    // Validate file type
+    $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($file_ext !== 'csv') {
+        wp_send_json_error(array('message' => __('Please upload a CSV file', 'teacherske')));
+    }
+
+    // Validate file size (10MB)
+    if ($file['size'] > 10485760) {
+        wp_send_json_error(array('message' => __('File too large. Maximum 10MB', 'teacherske')));
+    }
+
+    // Move to temp directory
+    $upload_dir = wp_upload_dir();
+    $temp_dir = $upload_dir['basedir'] . '/tkm-csv-temp/';
+
+    // Create temp directory if not exists
+    if (!file_exists($temp_dir)) {
+        wp_mkdir_p($temp_dir);
+    }
+
+    // Generate unique filename
+    $temp_filename = 'import_' . uniqid() . '_' . time() . '.csv';
+    $temp_filepath = $temp_dir . $temp_filename;
+
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $temp_filepath)) {
+        wp_send_json_error(array('message' => __('Failed to save uploaded file', 'teacherske')));
+    }
+
+    // Get CSV headers
+    $importer = new TKM_Bulk_Importer();
+    $headers = $importer->get_csv_headers($temp_filepath);
+
+    if (!$headers) {
+        unlink($temp_filepath);
+        wp_send_json_error(array('message' => __('Could not read CSV headers', 'teacherske')));
+    }
+
+    // Count total rows
+    $row_count = 0;
+    if (($handle = fopen($temp_filepath, 'r')) !== false) {
+        fgetcsv($handle); // Skip header
+        while (fgetcsv($handle) !== false) {
+            $row_count++;
+        }
+        fclose($handle);
+    }
+
+    // Store file path in transient (expires in 1 hour)
+    $transient_key = 'tkm_csv_import_' . get_current_user_id();
+    set_transient($transient_key, $temp_filepath, HOUR_IN_SECONDS);
+
+    // Auto-detect field mapping
+    $auto_mapping = tkm_auto_detect_mapping($headers);
+
+    wp_send_json_success(array(
+        'headers' => $headers,
+        'row_count' => $row_count,
+        'auto_mapping' => $auto_mapping,
+        'temp_key' => $transient_key
+    ));
+}
+add_action('wp_ajax_tkm_upload_csv', 'tkm_ajax_upload_csv');
+
+/**
+ * Auto-detect CSV field mapping
+ */
+function tkm_auto_detect_mapping($headers) {
+    $mapping = array();
+
+    // Mapping patterns (case-insensitive)
+    $patterns = array(
+        'title' => array('title', 'name', 'document', 'doc_name', 'filename'),
+        'description' => array('description', 'desc', 'details', 'about', 'summary'),
+        'file' => array('file', 'url', 'link', 'fileurl', 'file_url', 'document_url', 'download'),
+        'level' => array('level', 'education_level', 'edu_level', 'class_level'),
+        'grade' => array('grade', 'class', 'year', 'std', 'form'),
+        'subject' => array('subject', 'topic', 'course', 'category'),
+        'version' => array('version', 'edition', 'year', 'release'),
+        'author' => array('author', 'creator', 'uploaded_by', 'by')
+    );
+
+    foreach ($headers as $header) {
+        $header_lower = strtolower(trim($header));
+
+        foreach ($patterns as $field => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (strpos($header_lower, $keyword) !== false) {
+                    if (!isset($mapping[$field])) {
+                        $mapping[$field] = $header;
+                    }
+                    break 2;
+                }
+            }
+        }
+    }
+
+    return $mapping;
+}
+
+/**
+ * AJAX: Process Batch Import
+ */
+function tkm_ajax_batch_import() {
+    check_ajax_referer('tkm_csv_import', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Permission denied', 'teacherske')));
+    }
+
+    // Get file path from transient
+    $transient_key = sanitize_text_field($_POST['temp_key']);
+    $file_path = get_transient($transient_key);
+
+    if (!$file_path || !file_exists($file_path)) {
+        wp_send_json_error(array('message' => __('CSV file not found. Please upload again.', 'teacherske')));
+    }
+
+    // Get field mapping
+    $field_mapping = isset($_POST['mapping']) ? json_decode(stripslashes($_POST['mapping']), true) : array();
+
+    // Get batch parameters
+    $batch_start = isset($_POST['batch_start']) ? intval($_POST['batch_start']) : 0;
+    $batch_size = 30; // Process 30 rows per batch
+
+    // Read CSV and process batch
+    $rows = array();
+    $current_row = 0;
+
+    if (($handle = fopen($file_path, 'r')) !== false) {
+        $headers = fgetcsv($handle); // Get headers
+
+        // Skip to batch start
+        while ($current_row < $batch_start && fgetcsv($handle) !== false) {
+            $current_row++;
+        }
+
+        // Read batch rows
+        $batch_count = 0;
+        while ($batch_count < $batch_size && ($data = fgetcsv($handle)) !== false) {
+            // Skip empty rows
+            if (empty(array_filter($data))) {
+                $current_row++;
+                continue;
+            }
+
+            // Combine headers with data
+            $row = array();
+            foreach ($headers as $i => $col) {
+                $row[$col] = isset($data[$i]) ? $data[$i] : '';
+            }
+
+            $rows[] = $row;
+            $batch_count++;
+            $current_row++;
+        }
+
+        fclose($handle);
+    }
+
+    // Process each row
+    $importer = new TKM_Bulk_Importer();
+    $imported = 0;
+    $errors = array();
+
+    foreach ($rows as $index => $row) {
+        $row_number = $batch_start + $index + 2; // +2 for header and 1-based index
+
+        $result = $importer->import_row($row, $field_mapping);
+
+        if ($result['success']) {
+            $imported++;
+        } else {
+            $errors[] = sprintf(__('Row %d: %s', 'teacherske'), $row_number, $result['error']);
+        }
+    }
+
+    // Check if more batches remain
+    $total_processed = $batch_start + count($rows);
+    $has_more = count($rows) === $batch_size;
+
+    // Clean up if done
+    if (!$has_more) {
+        unlink($file_path);
+        delete_transient($transient_key);
+    }
+
+    wp_send_json_success(array(
+        'imported' => $imported,
+        'errors' => $errors,
+        'total_processed' => $total_processed,
+        'has_more' => $has_more,
+        'next_batch_start' => $total_processed
+    ));
+}
+add_action('wp_ajax_tkm_batch_import', 'tkm_ajax_batch_import');
+
+/**
+ * Expose import_row method for AJAX
+ */
+if (!class_exists('TKM_Bulk_Importer')) {
+    require_once TKM_DIR . 'includes/class-bulk-importer.php';
+}
+
+/**
+ * Enqueue CSV Import Assets
+ */
+function tkm_enqueue_csv_import_assets() {
+    $screen = get_current_screen();
+
+    if (!$screen || $screen->id !== 'teacher_document_page_tkm-csv-import') {
+        return;
+    }
+
+    // Enqueue CSV import JavaScript
+    wp_enqueue_script(
+        'tkm-csv-import',
+        TKM_URL . 'assets/js/csv-import.js',
+        array('jquery'),
+        TKM_VERSION,
+        true
+    );
+
+    // Localize script
+    wp_localize_script('tkm-csv-import', 'tkmCSV', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('tkm_csv_import'),
+        'documentsUrl' => admin_url('edit.php?post_type=teacher_document')
+    ));
+}
+add_action('admin_enqueue_scripts', 'tkm_enqueue_csv_import_assets');
