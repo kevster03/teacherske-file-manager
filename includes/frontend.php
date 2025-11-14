@@ -145,6 +145,7 @@ function tkm_add_schema_markup() {
     
     $file_url = get_post_meta($post->ID, '_tkm_file', true);
     $file_ext = get_post_meta($post->ID, '_tkm_file_ext', true);
+    $file_size = get_post_meta($post->ID, '_tkm_file_size', true);
     $description = get_post_meta($post->ID, '_tkm_description', true);
     $grade = get_post_meta($post->ID, '_tkm_grade', true);
     $level = get_post_meta($post->ID, '_tkm_level', true);
