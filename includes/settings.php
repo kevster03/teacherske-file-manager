@@ -42,35 +42,36 @@ function tkm_register_settings() {
     $settings = array(
         // Data Management
         'tkm_remove_on_uninstall',
-        
+
         // Colors
         'tkm_primary_color',
         'tkm_secondary_color',
         'tkm_bg_color_1',
         'tkm_bg_color_2',
-        
+
         // Download Settings
         'tkm_countdown_duration',
         'tkm_enable_tracking',
         'tkm_show_badge',
         'tkm_track_by_ip',
         'tkm_loader_type',
-        
+
         // UI Options
         'tkm_layout_density',
         'tkm_featured_image_size',
         'tkm_show_description',
         'tkm_fallback_image',
+        'tkm_fallback_featured_image', // NEW: Fallback featured image ID
         'tkm_related_files_count',
         'tkm_enable_sidebar', // NEW: Sidebar enable/disable
-        
+
         // SEO
         'tkm_enable_schema',
-        
+
         // Version Range
         'tkm_version_start',
         'tkm_version_end',
-        
+
         // Subjects
         'tkm_subjects_by_level'
     );
@@ -101,15 +102,15 @@ function tkm_sanitize_setting($value) {
     }
     
     // Integer fields
-    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end'))) {
+    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end', 'fallback_featured_image'))) {
         return intval($value);
     }
-    
+
     // Array fields
     if ($setting === 'subjects_by_level') {
         return is_array($value) ? $value : array();
     }
-    
+
     // URL fields
     if ($setting === 'fallback_image') {
         return esc_url_raw($value);

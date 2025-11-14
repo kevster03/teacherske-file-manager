@@ -18,7 +18,7 @@ class TKM_Bulk_Importer {
     /**
      * Optional fields
      */
-    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author');
+    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author', 'category', 'featured_image');
     
     /**
      * Maximum file size (10MB)
@@ -282,15 +282,32 @@ class TKM_Bulk_Importer {
             update_post_meta($post_id, '_tkm_file_size', $size);
         }
         
-        // Add subject
+        // Add subject (as meta field, not taxonomy)
         if (!empty($data['subject'])) {
-            $subjects = array_map('trim', explode(',', $data['subject']));
-            wp_set_post_terms($post_id, $subjects, 'subject');
+            update_post_meta($post_id, '_tkm_subject', sanitize_text_field($data['subject']));
         }
-        
+
+        // Add category (file_category taxonomy)
+        if (!empty($data['category'])) {
+            $categories = array_map('trim', explode(',', $data['category']));
+            wp_set_post_terms($post_id, $categories, 'file_category');
+        }
+
+        // Add featured image from URL or use fallback
+        if (!empty($data['featured_image'])) {
+            $image_result = $this->download_featured_image($data['featured_image'], $post_id);
+            // Silently fail if image download doesn't work
+        } else {
+            // Use fallback featured image if no image provided
+            $fallback_image_id = get_option('tkm_fallback_featured_image', 0);
+            if ($fallback_image_id) {
+                set_post_thumbnail($post_id, intval($fallback_image_id));
+            }
+        }
+
         // Initialize download tracking
         update_post_meta($post_id, '_tkm_download_count', 0);
-        
+
         return array(
             'success' => true,
             'post_id' => $post_id
@@ -298,8 +315,58 @@ class TKM_Bulk_Importer {
     }
     
     /**
+     * Download and attach featured image from URL
+     *
+     * @param string $image_url URL to image
+     * @param int $post_id Post ID
+     * @return bool Success status
+     */
+    private function download_featured_image($image_url, $post_id) {
+        // Validate URL
+        if (!filter_var($image_url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        // Required WordPress functions
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+        // Download image
+        $tmp = download_url($image_url);
+
+        if (is_wp_error($tmp)) {
+            return false;
+        }
+
+        // Get file name from URL
+        $file_array = array(
+            'name' => basename($image_url),
+            'tmp_name' => $tmp
+        );
+
+        // Import to media library
+        $attachment_id = media_handle_sideload($file_array, $post_id);
+
+        // Delete temp file
+        if (file_exists($tmp)) {
+            @unlink($tmp);
+        }
+
+        // Check for errors
+        if (is_wp_error($attachment_id)) {
+            return false;
+        }
+
+        // Set as featured image
+        set_post_thumbnail($post_id, $attachment_id);
+
+        return true;
+    }
+
+    /**
      * Get CSV headers
-     * 
+     *
      * @param string $file_path File path
      * @return array|false Headers or false on error
      */
@@ -331,9 +398,11 @@ class TKM_Bulk_Importer {
             'grade',
             'version',
             'subject',
+            'category',
+            'featured_image',
             'author'
         );
-        
+
         $sample_row = array(
             'Grade 7 Mathematics - Algebra Notes',
             'Comprehensive notes covering all algebra topics',
@@ -342,6 +411,8 @@ class TKM_Bulk_Importer {
             'Grade 7',
             '2026 Edition',
             'Mathematics',
+            'Schemes of Work',
+            'https://example.com/images/cover.jpg',
             'admin'
         );
         
@@ -383,6 +454,8 @@ class TKM_Bulk_Importer {
             'grade' => __('Specific grade (required): PP1, PP2, Grade 1, Grade 2, etc.', 'teacherske'),
             'version' => __('Document version: 2026 Edition, 2027 Edition, etc.', 'teacherske'),
             'subject' => __('Subject name (must match existing subjects)', 'teacherske'),
+            'category' => __('Category name (e.g., Schemes of Work, Lesson Plans, etc.)', 'teacherske'),
+            'featured_image' => __('Full URL to featured image (will be downloaded and attached)', 'teacherske'),
             'author' => __('WordPress username or email of document author', 'teacherske')
         );
     }

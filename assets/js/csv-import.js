@@ -159,6 +159,8 @@
                 {name: 'grade', label: 'Grade', required: true},
                 {name: 'description', label: 'Description', required: false},
                 {name: 'subject', label: 'Subject', required: false},
+                {name: 'category', label: 'Category', required: false},
+                {name: 'featured_image', label: 'Featured Image URL', required: false},
                 {name: 'version', label: 'Version', required: false},
                 {name: 'author', label: 'Author', required: false}
             ];

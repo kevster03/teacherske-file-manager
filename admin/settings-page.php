@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) exit;
 // Handle form submission
 if (isset($_POST['tkm_save_settings']) && check_admin_referer('tkm_settings_save')) {
     $settings_to_save = array(
-        'tkm_primary_color','tkm_secondary_color','tkm_bg_color_1','tkm_bg_color_2','tkm_bg_color_3','tkm_bg_color_4','tkm_border_color','tkm_border_size','tkm_countdown_duration','tkm_related_files_count','tkm_version_start','tkm_version_end','tkm_remove_on_uninstall'
+        'tkm_primary_color','tkm_secondary_color','tkm_bg_color_1','tkm_bg_color_2','tkm_bg_color_3','tkm_bg_color_4','tkm_border_color','tkm_border_size','tkm_countdown_duration','tkm_related_files_count','tkm_version_start','tkm_version_end','tkm_remove_on_uninstall','tkm_fallback_featured_image'
     );
     foreach ($settings_to_save as $setting) {
         if (isset($_POST[$setting])) {
@@ -18,6 +18,8 @@ if (isset($_POST['tkm_save_settings']) && check_admin_referer('tkm_settings_save
                 $value = intval($value);
             } elseif ($setting === 'tkm_remove_on_uninstall') {
                 $value = $value === '1' ? 'yes' : 'no';
+            } elseif ($setting === 'tkm_fallback_featured_image') {
+                $value = intval($value); // Attachment ID
             } else {
                 $value = sanitize_text_field($value);
             }
@@ -43,7 +45,8 @@ $settings = array(
     'related_files_count' => tkm_get_setting('related_files_count', 8),
     'version_start' => tkm_get_setting('version_start', 2025),
     'version_end' => tkm_get_setting('version_end', 2050),
-    'remove_on_uninstall' => tkm_get_setting('remove_on_uninstall', 'no')
+    'remove_on_uninstall' => tkm_get_setting('remove_on_uninstall', 'no'),
+    'fallback_featured_image' => tkm_get_setting('fallback_featured_image', 0)
 );
 ?>
 <div class="wrap tkm-settings-wrap">
@@ -72,6 +75,37 @@ $settings = array(
 <tr><th scope="row">Countdown Duration</th><td>
 <input type="number" name="tkm_countdown_duration" value="<?php echo esc_attr($settings['countdown_duration']); ?>" min="0" max="60" style="width:80px"> seconds
 <p class="description">Time before download starts (default: 10 seconds)</p>
+</td></tr>
+<tr><th scope="row">Fallback Featured Image</th><td>
+<?php
+$fallback_image_id = intval($settings['fallback_featured_image']);
+$fallback_image_url = $fallback_image_id ? wp_get_attachment_url($fallback_image_id) : '';
+?>
+<div style="margin-bottom:10px;">
+    <input type="hidden" name="tkm_fallback_featured_image" id="tkm_fallback_featured_image" value="<?php echo esc_attr($fallback_image_id); ?>">
+    <?php if ($fallback_image_url): ?>
+        <div id="tkm_fallback_preview" style="margin-bottom:10px;">
+            <img src="<?php echo esc_url($fallback_image_url); ?>" style="max-width:200px;height:auto;border:2px solid #ddd;border-radius:4px;">
+        </div>
+    <?php else: ?>
+        <div id="tkm_fallback_preview" style="display:none;margin-bottom:10px;">
+            <img src="" style="max-width:200px;height:auto;border:2px solid #ddd;border-radius:4px;">
+        </div>
+    <?php endif; ?>
+    <button type="button" class="button" id="tkm_select_fallback_image">
+        <span class="dashicons dashicons-format-image" style="margin-top:3px;"></span> Select Fallback Image
+    </button>
+    <?php if ($fallback_image_url): ?>
+        <button type="button" class="button" id="tkm_remove_fallback_image">
+            <span class="dashicons dashicons-no" style="margin-top:3px;"></span> Remove
+        </button>
+    <?php else: ?>
+        <button type="button" class="button" id="tkm_remove_fallback_image" style="display:none;">
+            <span class="dashicons dashicons-no" style="margin-top:3px;"></span> Remove
+        </button>
+    <?php endif; ?>
+</div>
+<p class="description">Default featured image for documents that don't have one set</p>
 </td></tr>
 <tr><th></th><td>
 <div style="background:#d4edda;border-left:4px solid #28a745;padding:15px;border-radius:4px;">
@@ -202,9 +236,50 @@ foreach ($levels as $key => $data):
 </div>
 <script>
 jQuery(document).ready(function($) {
+    // Color picker
     if ($.fn.wpColorPicker) {
         $('.tkm-color-picker').wpColorPicker();
     }
+
+    // Fallback featured image picker
+    var fallbackImageFrame;
+
+    $('#tkm_select_fallback_image').on('click', function(e) {
+        e.preventDefault();
+
+        if (fallbackImageFrame) {
+            fallbackImageFrame.open();
+            return;
+        }
+
+        fallbackImageFrame = wp.media({
+            title: 'Select Fallback Featured Image',
+            button: {
+                text: 'Use this image'
+            },
+            multiple: false,
+            library: {
+                type: 'image'
+            }
+        });
+
+        fallbackImageFrame.on('select', function() {
+            var attachment = fallbackImageFrame.state().get('selection').first().toJSON();
+            $('#tkm_fallback_featured_image').val(attachment.id);
+            $('#tkm_fallback_preview img').attr('src', attachment.url);
+            $('#tkm_fallback_preview').show();
+            $('#tkm_remove_fallback_image').show();
+        });
+
+        fallbackImageFrame.open();
+    });
+
+    $('#tkm_remove_fallback_image').on('click', function(e) {
+        e.preventDefault();
+        $('#tkm_fallback_featured_image').val('');
+        $('#tkm_fallback_preview').hide();
+        $('#tkm_remove_fallback_image').hide();
+    });
 });
 </script>
 <style>
