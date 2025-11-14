@@ -67,8 +67,11 @@
             this.tempKey = response.data.temp_key;
             this.mapping = response.data.auto_mapping;
 
-            // Build mapping interface
-            this.buildMappingInterface();
+            // Save to sessionStorage for step 2
+            sessionStorage.setItem('tkm_temp_key', this.tempKey);
+            sessionStorage.setItem('tkm_headers', JSON.stringify(this.headers));
+            sessionStorage.setItem('tkm_total_rows', this.totalRows);
+            sessionStorage.setItem('tkm_mapping', JSON.stringify(this.mapping));
 
             // Update URL to step 2 (preserve post_type parameter)
             window.location.href = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=2';
@@ -183,6 +186,9 @@
             this.totalImported = 0;
             this.totalErrors = [];
 
+            // Save updated mapping to sessionStorage for step 3
+            sessionStorage.setItem('tkm_mapping', JSON.stringify(this.mapping));
+
             // Redirect to step 3 (preserve post_type parameter)
             window.location.href = window.location.pathname + '?post_type=teacher_document&page=tkm-csv-import&step=3';
         },
@@ -289,8 +295,27 @@
     $(document).ready(function() {
         CSVImport.init();
 
-        // Auto-start import on step 3
         var urlParams = new URLSearchParams(window.location.search);
+
+        // Restore data and build interface on step 2
+        if (urlParams.get('step') === '2') {
+            var tempKey = sessionStorage.getItem('tkm_temp_key');
+            var headers = sessionStorage.getItem('tkm_headers');
+            var totalRows = sessionStorage.getItem('tkm_total_rows');
+            var mapping = sessionStorage.getItem('tkm_mapping');
+
+            if (tempKey && headers) {
+                CSVImport.tempKey = tempKey;
+                CSVImport.headers = JSON.parse(headers);
+                CSVImport.totalRows = parseInt(totalRows);
+                CSVImport.mapping = mapping ? JSON.parse(mapping) : {};
+
+                // Build the mapping interface
+                CSVImport.buildMappingInterface();
+            }
+        }
+
+        // Auto-start import on step 3
         if (urlParams.get('step') === '3') {
             // Get data from sessionStorage
             var tempKey = sessionStorage.getItem('tkm_temp_key');
@@ -308,13 +333,6 @@
                 }, 500);
             }
         }
-
-        // Save to sessionStorage on step 2 form submit
-        $('#mapping-form').on('submit', function() {
-            sessionStorage.setItem('tkm_temp_key', CSVImport.tempKey);
-            sessionStorage.setItem('tkm_mapping', JSON.stringify(CSVImport.mapping));
-            sessionStorage.setItem('tkm_total_rows', CSVImport.totalRows);
-        });
     });
 
 })(jQuery);
