@@ -320,4 +320,18 @@ if($related_query->have_posts()): ?>
 
 </div>
 
+<script>
+// Initialize Theia Sticky Sidebar on our custom sidebar
+jQuery(document).ready(function($) {
+    if (typeof $.fn.theiaStickySidebar !== 'undefined' && $('.tkm-sidebar').length) {
+        $('.tkm-sidebar').theiaStickySidebar({
+            additionalMarginTop: 30,
+            additionalMarginBottom: 30,
+            updateSidebarHeight: true,
+            minWidth: 900
+        });
+    }
+});
+</script>
+
 <?php get_footer(); ?>
