@@ -26,12 +26,6 @@ $file_size_formatted = $file_size ? tkm_format_file_size($file_size) : '';
 $featured_image = tkm_get_document_image($post_id, 'large');
 $countdown = intval(get_option('tkm_countdown_duration', 10));
 
-// Download limit colors
-$limit_info_color = get_option('tkm_limit_info_color', '#0066cc');
-$limit_info_bg = get_option('tkm_limit_info_bg', '#e7f3ff');
-$limit_error_color = get_option('tkm_limit_error_color', '#d32f2f');
-$limit_error_bg = get_option('tkm_limit_error_bg', '#fdecea');
-
 // DigitalDocument Schema for Google
 $schema = array(
 '@context' => 'https://schema.org',
@@ -88,16 +82,12 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 
 /* DOWNLOAD STATUS - ABOVE BUTTON */
 .tkm-status{font-size:16px !important;font-weight:600 !important;color:#2b1055 !important;margin-bottom:15px !important;min-height:24px !important;transition:all .3s !important}
-.tkm-status.info{color:<?php echo esc_attr($limit_info_color); ?> !important;background:<?php echo esc_attr($limit_info_bg); ?> !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid <?php echo esc_attr($limit_info_color); ?> !important}
-.tkm-status.error{color:<?php echo esc_attr($limit_error_color); ?> !important;background:<?php echo esc_attr($limit_error_bg); ?> !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid <?php echo esc_attr($limit_error_color); ?> !important}
 
 /* DOWNLOAD BUTTON - MORPHS INTO PROGRESS BAR */
 .tkm-btn-container{position:relative !important;width:100% !important;max-width:400px !important;margin:0 auto !important}
 .tkm-btn{width:100% !important;background:#c92651 !important;color:#fff !important;border:none !important;border-radius:12px !important;padding:18px 50px !important;font-size:20px !important;font-weight:700 !important;cursor:pointer !important;transition:all .3s !important;display:block !important;text-decoration:none !important;box-shadow:0 4px 12px rgba(201,38,81,.3) !important;position:relative !important;overflow:hidden !important}
 .tkm-btn:hover{background:#a01d3f !important;transform:translateY(-2px) !important;box-shadow:0 6px 18px rgba(201,38,81,.4) !important}
-.tkm-btn:disabled{cursor:not-allowed !important;opacity:0.6 !important}
-.tkm-btn.disabled{background:#999 !important;cursor:not-allowed !important;opacity:0.7 !important;box-shadow:none !important}
-.tkm-btn.disabled:hover{transform:none !important;background:#999 !important;box-shadow:none !important}
+.tkm-btn:disabled{cursor:not-allowed !important}
 .tkm-btn.green{background:#28a745 !important;box-shadow:0 4px 12px rgba(40,167,69,.3) !important}
 
 /* PROGRESS FILL - INSIDE BUTTON */
@@ -222,6 +212,36 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 <!-- HIGHEST REVENUE ZONE - Users wait here during countdown -->
 <!-- Recommended sizes: 728x90 (Leaderboard), 336x280 (Large Rectangle), 300x250 (Medium Rectangle) -->
 <!-- Example: <div id="ezoic-pub-ad-placeholder-101"></div> -->
+
+<?php
+// PDF Preview Settings
+$enable_preview = tkm_get_setting('enable_pdf_preview', 'no');
+$preview_pages = intval(tkm_get_setting('preview_pages', 2));
+$preview_bg_color = tkm_get_setting('preview_bg_color', '#f5f5f5');
+$preview_blur_intensity = intval(tkm_get_setting('preview_blur_intensity', 8));
+$preview_end_notice = tkm_get_setting('preview_end_notice', 'End of preview. Download to view the full document.');
+$is_pdf = ($file_ext === 'pdf');
+?>
+
+<?php if ($enable_preview === 'yes' && $is_pdf && $file_url): ?>
+<!-- PDF PREVIEW SECTION -->
+<div class="tkm-pdf-preview" style="background:<?php echo esc_attr($preview_bg_color); ?>;border-radius:12px;padding:20px;margin-bottom:30px;max-width:800px;margin-left:auto;margin-right:auto;">
+<div id="tkm-preview-container" style="position:relative;">
+<div id="tkm-preview-loading" style="text-align:center;padding:40px;color:#666;font-size:16px;font-weight:600;">
+<span class="dashicons dashicons-pdf" style="font-size:48px;color:#c92651;margin-bottom:10px;"></span>
+<br>Loading PDF preview...
+</div>
+<div id="tkm-preview-pages" style="display:none;"></div>
+<div id="tkm-preview-blur" style="display:none;position:relative;overflow:hidden;border-radius:8px;margin-top:10px;">
+<canvas id="tkm-blur-canvas" style="width:100%;filter:blur(<?php echo esc_attr($preview_blur_intensity); ?>px);"></canvas>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.95);padding:20px 30px;border-radius:8px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+<div style="font-size:18px;font-weight:700;color:#2b1055;margin-bottom:10px;"><?php echo esc_html($preview_end_notice); ?></div>
+<div style="font-size:14px;color:#666;">Click the button below to download the full document</div>
+</div>
+</div>
+</div>
+</div>
+<?php endif; ?>
 
 <!-- DOWNLOAD SECTION -->
 <div class="tkm-download">

@@ -71,7 +71,7 @@ add_action('wp_head', 'tkm_track_page_view', 1);
  */
 function tkm_frontend_assets() {
     if (!is_singular('teacher_document')) return;
-    
+
     // Frontend CSS (minimal - most CSS is inline for speed)
     wp_enqueue_style(
         'tkm-frontend-css',
@@ -79,7 +79,24 @@ function tkm_frontend_assets() {
         array(),
         TKM_VERSION
     );
-    
+
+    // Check if PDF preview is enabled
+    $enable_preview = tkm_get_setting('enable_pdf_preview', 'no');
+    $file_url = get_post_meta(get_the_ID(), '_tkm_file', true);
+    $file_ext = get_post_meta(get_the_ID(), '_tkm_file_ext', true);
+    $is_pdf = ($file_ext === 'pdf');
+
+    // Enqueue PDF.js if preview is enabled and file is PDF
+    if ($enable_preview === 'yes' && $is_pdf && $file_url) {
+        wp_enqueue_script(
+            'pdfjs',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+            array(),
+            '3.11.174',
+            true
+        );
+    }
+
     // Frontend JavaScript
     wp_enqueue_script(
         'tkm-frontend-js',
@@ -88,7 +105,7 @@ function tkm_frontend_assets() {
         TKM_VERSION,
         true
     );
-    
+
     // Pass settings to JavaScript
     $settings = array(
         'ajaxurl' => admin_url('admin-ajax.php'),
@@ -99,8 +116,14 @@ function tkm_frontend_assets() {
         'nonce' => wp_create_nonce('tkm_download_' . get_the_ID()),
         'primaryColor' => tkm_get_setting('primary_color', '#c92651'),
         'successColor' => '#28a745',
+        // PDF Preview settings
+        'pdfPreview' => array(
+            'enabled' => $enable_preview === 'yes' && $is_pdf,
+            'fileUrl' => $file_url,
+            'previewPages' => intval(tkm_get_setting('preview_pages', 2)),
+        ),
     );
-    
+
     wp_localize_script('tkm-frontend-js', 'tkmSettings', $settings);
 }
 add_action('wp_enqueue_scripts', 'tkm_frontend_assets');
@@ -129,71 +152,41 @@ function tkm_ajax_track_download() {
         // This prevents downloads from being blocked for guests
     }
 
-    // Check daily download limit BEFORE tracking
-    $limit_status = tkm_check_remaining_downloads();
-    if (!$limit_status['unlimited'] && $limit_status['remaining'] <= 0) {
-        wp_send_json_error(array(
-            'message' => __('Daily download limit reached. Please try again tomorrow.', 'teacherske'),
-            'limit_reached' => true,
-            'limit' => $limit_status['limit']
+    // Initialize tracker
+    $tracker = new TKM_Download_Tracker();
+
+    // Check if tracking is enabled
+    if (tkm_get_setting('enable_tracking', 'yes') !== 'yes') {
+        wp_send_json_success(array(
+            'counted' => false,
+            'total' => $tracker->get_download_count($post_id),
+            'message' => __('Tracking disabled', 'teacherske')
         ));
         return;
     }
 
-    // Initialize tracker
-    $tracker = new TKM_Download_Tracker();
+    // Track the download
+    $result = $tracker->track_download($post_id);
 
-    // Track the download first (if tracking enabled)
-    $result = false;
-    if (tkm_get_setting('enable_tracking', 'yes') === 'yes') {
-        $result = $tracker->track_download($post_id);
-    }
-
-    // Increment daily download counter BEFORE getting new status
-    if (!$limit_status['unlimited']) {
-        tkm_increment_download_count();
-    }
-
-    // Get updated remaining count AFTER increment
-    $new_limit_status = tkm_check_remaining_downloads();
-
-    // Get current download count for this document
+    // Always return current count
     $current_count = $tracker->get_download_count($post_id);
 
     if ($result) {
         wp_send_json_success(array(
             'counted' => true,
             'total' => $current_count,
-            'message' => __('Download tracked', 'teacherske'),
-            'remaining' => $new_limit_status['remaining']
+            'message' => __('Download tracked', 'teacherske')
         ));
     } else {
         wp_send_json_success(array(
             'counted' => false,
             'total' => $current_count,
-            'message' => __('Already counted from this IP recently', 'teacherske'),
-            'remaining' => $new_limit_status['remaining']
+            'message' => __('Already counted from this IP recently', 'teacherske')
         ));
     }
 }
 add_action('wp_ajax_tkm_track_download', 'tkm_ajax_track_download');
 add_action('wp_ajax_nopriv_tkm_track_download', 'tkm_ajax_track_download');
-
-/**
- * AJAX: Check Remaining Downloads
- */
-function tkm_ajax_check_download_limit() {
-    $limit_status = tkm_check_remaining_downloads();
-
-    wp_send_json_success(array(
-        'remaining' => $limit_status['remaining'],
-        'limit' => $limit_status['limit'],
-        'used' => $limit_status['used'],
-        'unlimited' => $limit_status['unlimited']
-    ));
-}
-add_action('wp_ajax_tkm_check_download_limit', 'tkm_ajax_check_download_limit');
-add_action('wp_ajax_nopriv_tkm_check_download_limit', 'tkm_ajax_check_download_limit');
 
 /**
  * Add Schema.org Markup to Head

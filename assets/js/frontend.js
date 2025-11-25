@@ -8,6 +8,11 @@
     // Check if settings exist
     if (typeof tkmSettings === 'undefined') return;
 
+    // Initialize PDF Preview if enabled
+    if (tkmSettings.pdfPreview && tkmSettings.pdfPreview.enabled) {
+        initPdfPreview();
+    }
+
     // Get elements
     var btn = document.getElementById('tkm-btn');
     var btnText = document.getElementById('tkm-btn-text');
@@ -21,68 +26,15 @@
     var countdown = parseInt(tkmSettings.countdown) || 10;
     var isRunning = false;
     var intervalId = null;
-    var downloadLimitReached = false;
-
-    // Check download limit on page load
-    checkDownloadLimit();
-
-    /**
-     * Check remaining downloads and update UI
-     */
-    function checkDownloadLimit() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', tkmSettings.ajaxurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success && response.data) {
-                        updateLimitUI(response.data);
-                    }
-                } catch (e) {
-                    console.log('Failed to check download limit:', e);
-                }
-            }
-        };
-
-        xhr.send('action=tkm_check_download_limit');
-    }
-
-    /**
-     * Update UI based on download limit status
-     */
-    function updateLimitUI(limitData) {
-        if (limitData.unlimited) {
-            // No limit set - don't show any message
-            return;
-        }
-
-        if (limitData.remaining <= 0) {
-            // Limit reached - disable button and show message
-            downloadLimitReached = true;
-            btn.disabled = true;
-            btn.className = 'tkm-btn disabled';
-            btnText.textContent = 'Limit Reached';
-            status.className = 'tkm-status error';
-            status.textContent = 'Daily download limit reached. Please try again tomorrow.';
-        } else {
-            // Show remaining downloads
-            status.className = 'tkm-status info';
-            status.textContent = 'You have ' + limitData.remaining + ' free download' + (limitData.remaining === 1 ? '' : 's') + ' remaining today';
-        }
-    }
 
     // Button click handler
     btn.addEventListener('click', function() {
-        if (isRunning || downloadLimitReached) return;
+        if (isRunning) return;
 
         isRunning = true;
         btn.disabled = true;
 
-        // Clear any previous status message
-        status.className = 'tkm-status';
+        // Show status message
         status.textContent = 'Preparing your secure download link...please wait';
 
         // Start countdown
@@ -206,41 +158,13 @@
                 try {
                     var response = JSON.parse(xhr.responseText);
 
-                    if (response.success && response.data) {
-                        // Update download counter if present
-                        if ('total' in response.data && countEl) {
-                            var newCount = parseInt(response.data.total) || 0;
-                            countEl.textContent = formatNumber(newCount);
-                            console.log('Download count updated to:', newCount);
-                        }
-
-                        // Update remaining downloads if limit is active
-                        if ('remaining' in response.data) {
-                            var remaining = parseInt(response.data.remaining);
-                            if (remaining > 0) {
-                                // Update status to show new remaining count
-                                setTimeout(function() {
-                                    status.className = 'tkm-status info';
-                                    status.textContent = 'You have ' + remaining + ' free download' + (remaining === 1 ? '' : 's') + ' remaining today';
-                                }, 2000);
-                            } else if (remaining === 0) {
-                                // Just hit the limit - show limit reached message
-                                setTimeout(function() {
-                                    status.className = 'tkm-status error';
-                                    status.textContent = 'Daily download limit reached. Please try again tomorrow.';
-                                    btn.disabled = true;
-                                    btn.className = 'tkm-btn disabled';
-                                    downloadLimitReached = true;
-                                }, 2000);
-                            }
-                        }
-                    } else if (!response.success && response.data && response.data.limit_reached) {
-                        // Handle limit reached error
-                        status.className = 'tkm-status error';
-                        status.textContent = response.data.message || 'Daily download limit reached. Please try again tomorrow.';
-                        btn.disabled = true;
-                        btn.className = 'tkm-btn disabled';
-                        downloadLimitReached = true;
+                    // Update counter if successful (check for 'total' property, not truthy value)
+                    if (response.success && response.data && 'total' in response.data && countEl) {
+                        var newCount = parseInt(response.data.total) || 0;
+                        countEl.textContent = formatNumber(newCount);
+                        console.log('Download count updated to:', newCount);
+                    } else {
+                        console.log('Counter update skipped. Response:', response);
                     }
                 } catch (e) {
                     console.log('Counter update failed:', e);
@@ -310,5 +234,121 @@
             return '';
         }
     });
+
+    /**
+     * Initialize PDF Preview
+     */
+    function initPdfPreview() {
+        // Check if PDF.js is loaded
+        if (typeof pdfjsLib === 'undefined') {
+            console.log('PDF.js not loaded, preview disabled');
+            return;
+        }
+
+        var fileUrl = tkmSettings.pdfPreview.fileUrl;
+        var maxPages = parseInt(tkmSettings.pdfPreview.previewPages) || 2;
+
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        var loadingEl = document.getElementById('tkm-preview-loading');
+        var pagesEl = document.getElementById('tkm-preview-pages');
+        var blurEl = document.getElementById('tkm-preview-blur');
+
+        if (!loadingEl || !pagesEl || !blurEl) {
+            console.log('Preview elements not found');
+            return;
+        }
+
+        // Load PDF
+        var loadingTask = pdfjsLib.getDocument(fileUrl);
+
+        loadingTask.promise.then(function(pdf) {
+            console.log('PDF loaded, total pages:', pdf.numPages);
+
+            var totalPages = pdf.numPages;
+            var pagesToShow = Math.min(maxPages, totalPages);
+            var hasMorePages = totalPages > pagesToShow;
+
+            // Render clear pages
+            var renderPromises = [];
+            for (var i = 1; i <= pagesToShow; i++) {
+                renderPromises.push(renderPage(pdf, i, pagesEl, false));
+            }
+
+            // Wait for all clear pages to render
+            Promise.all(renderPromises).then(function() {
+                // Hide loading, show pages
+                loadingEl.style.display = 'none';
+                pagesEl.style.display = 'block';
+
+                // If there are more pages, render one blurred page
+                if (hasMorePages) {
+                    var blurPageNumber = pagesToShow + 1;
+                    renderPage(pdf, blurPageNumber, blurEl, true).then(function() {
+                        blurEl.style.display = 'block';
+                    });
+                }
+            }).catch(function(error) {
+                console.error('Error rendering pages:', error);
+                showPreviewError(loadingEl);
+            });
+        }).catch(function(error) {
+            console.error('Error loading PDF:', error);
+            showPreviewError(loadingEl);
+        });
+    }
+
+    /**
+     * Render a single PDF page
+     */
+    function renderPage(pdf, pageNumber, container, isBlurred) {
+        return pdf.getPage(pageNumber).then(function(page) {
+            var scale = 1.5;
+            var viewport = page.getViewport({ scale: scale });
+
+            // Create canvas
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Style canvas
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.display = 'block';
+            canvas.style.marginBottom = '10px';
+            canvas.style.borderRadius = '8px';
+            canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+            // For blurred canvas, use the existing canvas in the blur container
+            if (isBlurred) {
+                var blurCanvas = document.getElementById('tkm-blur-canvas');
+                if (blurCanvas) {
+                    blurCanvas.height = viewport.height;
+                    blurCanvas.width = viewport.width;
+                    context = blurCanvas.getContext('2d');
+                    canvas = blurCanvas;
+                }
+            } else {
+                container.appendChild(canvas);
+            }
+
+            // Render page
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+
+            return page.render(renderContext).promise;
+        });
+    }
+
+    /**
+     * Show preview error message
+     */
+    function showPreviewError(loadingEl) {
+        loadingEl.innerHTML = '<span style="color:#d32f2f;font-size:16px;">Unable to load PDF preview. You can still download the file below.</span>';
+    }
 
 })();
