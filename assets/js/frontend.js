@@ -10,7 +10,20 @@
 
     // Initialize PDF Preview if enabled
     if (tkmSettings.pdfPreview && tkmSettings.pdfPreview.enabled) {
-        initPdfPreview();
+        console.log('PDF Preview enabled');
+        console.log('File URL:', tkmSettings.pdfPreview.fileUrl);
+
+        // PDF.js should be loaded already due to WordPress dependency
+        if (typeof pdfjsLib !== 'undefined') {
+            console.log('PDF.js is available, initializing preview...');
+            initPdfPreview();
+        } else {
+            console.error('PDF.js not loaded despite dependency');
+            var loadingEl = document.getElementById('tkm-preview-loading');
+            if (loadingEl) {
+                loadingEl.innerHTML = '<span style="color:#d32f2f;">PDF.js library failed to load. Preview unavailable.</span>';
+            }
+        }
     }
 
     // Get elements
@@ -241,12 +254,22 @@
     function initPdfPreview() {
         // Check if PDF.js is loaded
         if (typeof pdfjsLib === 'undefined') {
-            console.log('PDF.js not loaded, preview disabled');
+            console.error('PDF.js not loaded, preview disabled');
             return;
         }
 
+        console.log('Starting PDF preview initialization...');
+
         var fileUrl = tkmSettings.pdfPreview.fileUrl;
         var maxPages = parseInt(tkmSettings.pdfPreview.previewPages) || 2;
+
+        console.log('File URL:', fileUrl);
+        console.log('Max pages:', maxPages);
+
+        if (!fileUrl) {
+            console.error('No file URL provided');
+            return;
+        }
 
         // Set PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -256,15 +279,25 @@
         var blurEl = document.getElementById('tkm-preview-blur');
 
         if (!loadingEl || !pagesEl || !blurEl) {
-            console.log('Preview elements not found');
+            console.error('Preview elements not found', {
+                loading: !!loadingEl,
+                pages: !!pagesEl,
+                blur: !!blurEl
+            });
             return;
         }
 
-        // Load PDF
-        var loadingTask = pdfjsLib.getDocument(fileUrl);
+        console.log('Loading PDF from URL:', fileUrl);
+
+        // Load PDF with CORS configuration
+        var loadingTask = pdfjsLib.getDocument({
+            url: fileUrl,
+            withCredentials: false,
+            isEvalSupported: false
+        });
 
         loadingTask.promise.then(function(pdf) {
-            console.log('PDF loaded, total pages:', pdf.numPages);
+            console.log('PDF loaded successfully! Total pages:', pdf.numPages);
 
             var totalPages = pdf.numPages;
             var pagesToShow = Math.min(maxPages, totalPages);

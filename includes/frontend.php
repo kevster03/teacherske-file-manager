@@ -86,6 +86,8 @@ function tkm_frontend_assets() {
     $file_ext = get_post_meta(get_the_ID(), '_tkm_file_ext', true);
     $is_pdf = ($file_ext === 'pdf');
 
+    $dependencies = array();
+
     // Enqueue PDF.js if preview is enabled and file is PDF
     if ($enable_preview === 'yes' && $is_pdf && $file_url) {
         wp_enqueue_script(
@@ -95,13 +97,14 @@ function tkm_frontend_assets() {
             '3.11.174',
             true
         );
+        $dependencies[] = 'pdfjs';
     }
 
-    // Frontend JavaScript
+    // Frontend JavaScript - depends on PDF.js if it's loaded
     wp_enqueue_script(
         'tkm-frontend-js',
         TKM_URL . 'assets/js/frontend.js',
-        array(),
+        $dependencies,
         TKM_VERSION,
         true
     );
