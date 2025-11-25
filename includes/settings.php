@@ -56,6 +56,10 @@ function tkm_register_settings() {
         'tkm_track_by_ip',
         'tkm_loader_type',
         'tkm_daily_download_limit',
+        'tkm_limit_info_color',
+        'tkm_limit_info_bg',
+        'tkm_limit_error_color',
+        'tkm_limit_error_bg',
 
         // UI Options
         'tkm_layout_density',
@@ -91,8 +95,8 @@ function tkm_sanitize_setting($value) {
     $setting = str_replace('tkm_', '', current_filter());
     $setting = str_replace('sanitize_option_', '', $setting);
     
-    // Color fields
-    if (strpos($setting, '_color') !== false) {
+    // Color fields (includes _color and _bg suffixes)
+    if (strpos($setting, '_color') !== false || strpos($setting, '_bg') !== false) {
         return tkm_sanitize_color($value);
     }
     

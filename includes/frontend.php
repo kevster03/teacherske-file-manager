@@ -143,35 +143,22 @@ function tkm_ajax_track_download() {
     // Initialize tracker
     $tracker = new TKM_Download_Tracker();
 
-    // Check if tracking is enabled
-    if (tkm_get_setting('enable_tracking', 'yes') !== 'yes') {
-        // Still enforce download limit even if tracking is disabled
-        if (!$limit_status['unlimited']) {
-            tkm_increment_download_count();
-        }
-
-        wp_send_json_success(array(
-            'counted' => false,
-            'total' => $tracker->get_download_count($post_id),
-            'message' => __('Tracking disabled', 'teacherske'),
-            'remaining' => $limit_status['remaining'] - 1
-        ));
-        return;
+    // Track the download first (if tracking enabled)
+    $result = false;
+    if (tkm_get_setting('enable_tracking', 'yes') === 'yes') {
+        $result = $tracker->track_download($post_id);
     }
 
-    // Track the download
-    $result = $tracker->track_download($post_id);
-
-    // Increment daily download counter (separate from document tracking)
+    // Increment daily download counter BEFORE getting new status
     if (!$limit_status['unlimited']) {
         tkm_increment_download_count();
     }
 
-    // Always return current count
-    $current_count = $tracker->get_download_count($post_id);
-
-    // Get updated remaining count
+    // Get updated remaining count AFTER increment
     $new_limit_status = tkm_check_remaining_downloads();
+
+    // Get current download count for this document
+    $current_count = $tracker->get_download_count($post_id);
 
     if ($result) {
         wp_send_json_success(array(

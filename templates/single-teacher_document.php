@@ -26,6 +26,12 @@ $file_size_formatted = $file_size ? tkm_format_file_size($file_size) : '';
 $featured_image = tkm_get_document_image($post_id, 'large');
 $countdown = intval(get_option('tkm_countdown_duration', 10));
 
+// Download limit colors
+$limit_info_color = get_option('tkm_limit_info_color', '#0066cc');
+$limit_info_bg = get_option('tkm_limit_info_bg', '#e7f3ff');
+$limit_error_color = get_option('tkm_limit_error_color', '#d32f2f');
+$limit_error_bg = get_option('tkm_limit_error_bg', '#fdecea');
+
 // DigitalDocument Schema for Google
 $schema = array(
 '@context' => 'https://schema.org',
@@ -82,8 +88,8 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 
 /* DOWNLOAD STATUS - ABOVE BUTTON */
 .tkm-status{font-size:16px !important;font-weight:600 !important;color:#2b1055 !important;margin-bottom:15px !important;min-height:24px !important;transition:all .3s !important}
-.tkm-status.info{color:#0066cc !important;background:#e7f3ff !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid #0066cc !important}
-.tkm-status.error{color:#d32f2f !important;background:#fdecea !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid #d32f2f !important}
+.tkm-status.info{color:<?php echo esc_attr($limit_info_color); ?> !important;background:<?php echo esc_attr($limit_info_bg); ?> !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid <?php echo esc_attr($limit_info_color); ?> !important}
+.tkm-status.error{color:<?php echo esc_attr($limit_error_color); ?> !important;background:<?php echo esc_attr($limit_error_bg); ?> !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid <?php echo esc_attr($limit_error_color); ?> !important}
 
 /* DOWNLOAD BUTTON - MORPHS INTO PROGRESS BAR */
 .tkm-btn-container{position:relative !important;width:100% !important;max-width:400px !important;margin:0 auto !important}
