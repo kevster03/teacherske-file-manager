@@ -80,31 +80,11 @@ function tkm_frontend_assets() {
         TKM_VERSION
     );
 
-    // Check if PDF preview is enabled
-    $enable_preview = tkm_get_setting('enable_pdf_preview', 'no');
-    $file_url = get_post_meta(get_the_ID(), '_tkm_file', true);
-    $file_ext = get_post_meta(get_the_ID(), '_tkm_file_ext', true);
-    $is_pdf = ($file_ext === 'pdf');
-
-    $dependencies = array();
-
-    // Enqueue PDF.js if preview is enabled and file is PDF
-    if ($enable_preview === 'yes' && $is_pdf && $file_url) {
-        wp_enqueue_script(
-            'pdfjs',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-            array(),
-            '3.11.174',
-            true
-        );
-        $dependencies[] = 'pdfjs';
-    }
-
-    // Frontend JavaScript - depends on PDF.js if it's loaded
+    // Frontend JavaScript
     wp_enqueue_script(
         'tkm-frontend-js',
         TKM_URL . 'assets/js/frontend.js',
-        $dependencies,
+        array(),
         TKM_VERSION,
         true
     );
@@ -119,12 +99,6 @@ function tkm_frontend_assets() {
         'nonce' => wp_create_nonce('tkm_download_' . get_the_ID()),
         'primaryColor' => tkm_get_setting('primary_color', '#c92651'),
         'successColor' => '#28a745',
-        // PDF Preview settings
-        'pdfPreview' => array(
-            'enabled' => $enable_preview === 'yes' && $is_pdf,
-            'fileUrl' => $file_url,
-            'previewPages' => intval(tkm_get_setting('preview_pages', 2)),
-        ),
     );
 
     wp_localize_script('tkm-frontend-js', 'tkmSettings', $settings);

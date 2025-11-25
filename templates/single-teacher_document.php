@@ -213,36 +213,6 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 <!-- Recommended sizes: 728x90 (Leaderboard), 336x280 (Large Rectangle), 300x250 (Medium Rectangle) -->
 <!-- Example: <div id="ezoic-pub-ad-placeholder-101"></div> -->
 
-<?php
-// PDF Preview Settings
-$enable_preview = tkm_get_setting('enable_pdf_preview', 'no');
-$preview_pages = intval(tkm_get_setting('preview_pages', 2));
-$preview_bg_color = tkm_get_setting('preview_bg_color', '#f5f5f5');
-$preview_blur_intensity = intval(tkm_get_setting('preview_blur_intensity', 8));
-$preview_end_notice = tkm_get_setting('preview_end_notice', 'End of preview. Download to view the full document.');
-$is_pdf = ($file_ext === 'pdf');
-?>
-
-<?php if ($enable_preview === 'yes' && $is_pdf && $file_url): ?>
-<!-- PDF PREVIEW SECTION -->
-<div class="tkm-pdf-preview" style="background:<?php echo esc_attr($preview_bg_color); ?>;border-radius:12px;padding:20px;margin-bottom:30px;max-width:800px;margin-left:auto;margin-right:auto;">
-<div id="tkm-preview-container" style="position:relative;">
-<div id="tkm-preview-loading" style="text-align:center;padding:40px;color:#666;font-size:16px;font-weight:600;">
-<span class="dashicons dashicons-pdf" style="font-size:48px;color:#c92651;margin-bottom:10px;"></span>
-<br>Loading PDF preview...
-</div>
-<div id="tkm-preview-pages" style="display:none;"></div>
-<div id="tkm-preview-blur" style="display:none;position:relative;overflow:hidden;border-radius:8px;margin-top:10px;">
-<canvas id="tkm-blur-canvas" style="width:100%;filter:blur(<?php echo esc_attr($preview_blur_intensity); ?>px);"></canvas>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.95);padding:20px 30px;border-radius:8px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-<div style="font-size:18px;font-weight:700;color:#2b1055;margin-bottom:10px;"><?php echo esc_html($preview_end_notice); ?></div>
-<div style="font-size:14px;color:#666;">Click the button below to download the full document</div>
-</div>
-</div>
-</div>
-</div>
-<?php endif; ?>
-
 <!-- DOWNLOAD SECTION -->
 <div class="tkm-download">
 <div class="tkm-status" id="tkm-status"></div>

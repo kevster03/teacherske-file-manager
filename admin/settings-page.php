@@ -7,16 +7,16 @@ if (!defined('ABSPATH')) exit;
 // Handle form submission
 if (isset($_POST['tkm_save_settings']) && check_admin_referer('tkm_settings_save')) {
     $settings_to_save = array(
-        'tkm_primary_color','tkm_secondary_color','tkm_bg_color_1','tkm_bg_color_2','tkm_bg_color_3','tkm_bg_color_4','tkm_border_color','tkm_border_size','tkm_countdown_duration','tkm_enable_pdf_preview','tkm_preview_pages','tkm_preview_bg_color','tkm_preview_blur_intensity','tkm_preview_end_notice','tkm_related_files_count','tkm_version_start','tkm_version_end','tkm_remove_on_uninstall'
+        'tkm_primary_color','tkm_secondary_color','tkm_bg_color_1','tkm_bg_color_2','tkm_bg_color_3','tkm_bg_color_4','tkm_border_color','tkm_border_size','tkm_countdown_duration','tkm_related_files_count','tkm_version_start','tkm_version_end','tkm_remove_on_uninstall'
     );
     foreach ($settings_to_save as $setting) {
         if (isset($_POST[$setting])) {
             $value = $_POST[$setting];
             if (strpos($setting, '_color') !== false) {
                 $value = tkm_sanitize_color($value);
-            } elseif (in_array($setting, array('tkm_countdown_duration', 'tkm_preview_pages', 'tkm_preview_blur_intensity', 'tkm_related_files_count', 'tkm_version_start', 'tkm_version_end', 'tkm_border_size'))) {
+            } elseif (in_array($setting, array('tkm_countdown_duration', 'tkm_related_files_count', 'tkm_version_start', 'tkm_version_end', 'tkm_border_size'))) {
                 $value = intval($value);
-            } elseif (in_array($setting, array('tkm_remove_on_uninstall', 'tkm_enable_pdf_preview'))) {
+            } elseif (in_array($setting, array('tkm_remove_on_uninstall'))) {
                 $value = $value === '1' ? 'yes' : 'no';
             } else {
                 $value = sanitize_text_field($value);
@@ -40,11 +40,6 @@ $settings = array(
     'border_color' => tkm_get_setting('border_color', '#24011a'),
     'border_size' => tkm_get_setting('border_size', 3),
     'countdown_duration' => tkm_get_setting('countdown_duration', 10),
-    'enable_pdf_preview' => tkm_get_setting('enable_pdf_preview', 'no'),
-    'preview_pages' => tkm_get_setting('preview_pages', 2),
-    'preview_bg_color' => tkm_get_setting('preview_bg_color', '#f5f5f5'),
-    'preview_blur_intensity' => tkm_get_setting('preview_blur_intensity', 8),
-    'preview_end_notice' => tkm_get_setting('preview_end_notice', 'End of preview. Download to view the full document.'),
     'related_files_count' => tkm_get_setting('related_files_count', 8),
     'version_start' => tkm_get_setting('version_start', 2025),
     'version_end' => tkm_get_setting('version_end', 2050),
@@ -77,27 +72,6 @@ $settings = array(
 <tr><th scope="row">Countdown Duration</th><td>
 <input type="number" name="tkm_countdown_duration" value="<?php echo esc_attr($settings['countdown_duration']); ?>" min="0" max="60" style="width:80px"> seconds
 <p class="description">Time before download starts (default: 10 seconds)</p>
-</td></tr>
-<tr><th colspan="2"><h3 style="margin:20px 0 10px;">PDF Preview Settings</h3></th></tr>
-<tr><th scope="row">Enable PDF Preview</th><td>
-<label><input type="checkbox" name="tkm_enable_pdf_preview" value="1" <?php checked($settings['enable_pdf_preview'], 'yes'); ?>> Show PDF preview above download button</label>
-<p class="description">Display a lightweight preview of PDF files (first 2-3 pages only)</p>
-</td></tr>
-<tr><th scope="row">Preview Pages</th><td>
-<input type="number" name="tkm_preview_pages" value="<?php echo esc_attr($settings['preview_pages']); ?>" min="1" max="3" style="width:80px"> pages
-<p class="description">Number of pages to preview (1-3, default: 2)</p>
-</td></tr>
-<tr><th scope="row">Preview Background Color</th><td>
-<input type="text" name="tkm_preview_bg_color" value="<?php echo esc_attr($settings['preview_bg_color']); ?>" class="tkm-color-picker">
-<p class="description">Background color for preview container (default: #f5f5f5)</p>
-</td></tr>
-<tr><th scope="row">Blur Intensity</th><td>
-<input type="number" name="tkm_preview_blur_intensity" value="<?php echo esc_attr($settings['preview_blur_intensity']); ?>" min="1" max="20" style="width:80px"> px
-<p class="description">Blur amount applied after preview pages (1-20px, default: 8px)</p>
-</td></tr>
-<tr><th scope="row">End of Preview Notice</th><td>
-<textarea name="tkm_preview_end_notice" rows="2" style="width:100%;max-width:500px"><?php echo esc_textarea($settings['preview_end_notice']); ?></textarea>
-<p class="description">Message shown at the end of preview</p>
 </td></tr>
 <tr><th></th><td>
 <div style="background:#d4edda;border-left:4px solid #28a745;padding:15px;border-radius:4px;">

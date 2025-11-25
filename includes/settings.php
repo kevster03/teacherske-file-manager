@@ -56,13 +56,6 @@ function tkm_register_settings() {
         'tkm_track_by_ip',
         'tkm_loader_type',
 
-        // PDF Preview Settings
-        'tkm_enable_pdf_preview',
-        'tkm_preview_pages',
-        'tkm_preview_bg_color',
-        'tkm_preview_blur_intensity',
-        'tkm_preview_end_notice',
-
         // UI Options
         'tkm_layout_density',
         'tkm_featured_image_size',
@@ -103,12 +96,12 @@ function tkm_sanitize_setting($value) {
     }
 
     // Boolean fields
-    if (in_array($setting, array('remove_on_uninstall', 'enable_tracking', 'show_badge', 'track_by_ip', 'show_description', 'enable_schema', 'enable_sidebar', 'enable_pdf_preview'))) {
+    if (in_array($setting, array('remove_on_uninstall', 'enable_tracking', 'show_badge', 'track_by_ip', 'show_description', 'enable_schema', 'enable_sidebar'))) {
         return $value === 'yes' ? 'yes' : 'no';
     }
 
     // Integer fields
-    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end', 'preview_pages', 'preview_blur_intensity'))) {
+    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end'))) {
         return intval($value);
     }
 
