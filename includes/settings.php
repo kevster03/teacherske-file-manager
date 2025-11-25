@@ -55,6 +55,7 @@ function tkm_register_settings() {
         'tkm_show_badge',
         'tkm_track_by_ip',
         'tkm_loader_type',
+        'tkm_daily_download_limit',
 
         // UI Options
         'tkm_layout_density',
@@ -101,7 +102,7 @@ function tkm_sanitize_setting($value) {
     }
     
     // Integer fields
-    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end'))) {
+    if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end', 'daily_download_limit'))) {
         return intval($value);
     }
 

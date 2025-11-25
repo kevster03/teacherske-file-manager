@@ -82,12 +82,16 @@ if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'ur
 
 /* DOWNLOAD STATUS - ABOVE BUTTON */
 .tkm-status{font-size:16px !important;font-weight:600 !important;color:#2b1055 !important;margin-bottom:15px !important;min-height:24px !important;transition:all .3s !important}
+.tkm-status.info{color:#0066cc !important;background:#e7f3ff !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid #0066cc !important}
+.tkm-status.error{color:#d32f2f !important;background:#fdecea !important;padding:12px 20px !important;border-radius:8px !important;border-left:4px solid #d32f2f !important}
 
 /* DOWNLOAD BUTTON - MORPHS INTO PROGRESS BAR */
 .tkm-btn-container{position:relative !important;width:100% !important;max-width:400px !important;margin:0 auto !important}
 .tkm-btn{width:100% !important;background:#c92651 !important;color:#fff !important;border:none !important;border-radius:12px !important;padding:18px 50px !important;font-size:20px !important;font-weight:700 !important;cursor:pointer !important;transition:all .3s !important;display:block !important;text-decoration:none !important;box-shadow:0 4px 12px rgba(201,38,81,.3) !important;position:relative !important;overflow:hidden !important}
 .tkm-btn:hover{background:#a01d3f !important;transform:translateY(-2px) !important;box-shadow:0 6px 18px rgba(201,38,81,.4) !important}
-.tkm-btn:disabled{cursor:not-allowed !important}
+.tkm-btn:disabled{cursor:not-allowed !important;opacity:0.6 !important}
+.tkm-btn.disabled{background:#999 !important;cursor:not-allowed !important;opacity:0.7 !important;box-shadow:none !important}
+.tkm-btn.disabled:hover{transform:none !important;background:#999 !important;box-shadow:none !important}
 .tkm-btn.green{background:#28a745 !important;box-shadow:0 4px 12px rgba(40,167,69,.3) !important}
 
 /* PROGRESS FILL - INSIDE BUTTON */

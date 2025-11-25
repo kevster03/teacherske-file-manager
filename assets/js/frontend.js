@@ -21,15 +21,68 @@
     var countdown = parseInt(tkmSettings.countdown) || 10;
     var isRunning = false;
     var intervalId = null;
+    var downloadLimitReached = false;
+
+    // Check download limit on page load
+    checkDownloadLimit();
+
+    /**
+     * Check remaining downloads and update UI
+     */
+    function checkDownloadLimit() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', tkmSettings.ajaxurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success && response.data) {
+                        updateLimitUI(response.data);
+                    }
+                } catch (e) {
+                    console.log('Failed to check download limit:', e);
+                }
+            }
+        };
+
+        xhr.send('action=tkm_check_download_limit');
+    }
+
+    /**
+     * Update UI based on download limit status
+     */
+    function updateLimitUI(limitData) {
+        if (limitData.unlimited) {
+            // No limit set - don't show any message
+            return;
+        }
+
+        if (limitData.remaining <= 0) {
+            // Limit reached - disable button and show message
+            downloadLimitReached = true;
+            btn.disabled = true;
+            btn.className = 'tkm-btn disabled';
+            btnText.textContent = 'Limit Reached';
+            status.className = 'tkm-status error';
+            status.textContent = 'Daily download limit reached. Please try again tomorrow.';
+        } else {
+            // Show remaining downloads
+            status.className = 'tkm-status info';
+            status.textContent = 'You have ' + limitData.remaining + ' free download' + (limitData.remaining === 1 ? '' : 's') + ' remaining today';
+        }
+    }
 
     // Button click handler
     btn.addEventListener('click', function() {
-        if (isRunning) return;
+        if (isRunning || downloadLimitReached) return;
 
         isRunning = true;
         btn.disabled = true;
 
-        // Show status message
+        // Clear any previous status message
+        status.className = 'tkm-status';
         status.textContent = 'Preparing your secure download link...please wait';
 
         // Start countdown
@@ -153,13 +206,41 @@
                 try {
                     var response = JSON.parse(xhr.responseText);
 
-                    // Update counter if successful (check for 'total' property, not truthy value)
-                    if (response.success && response.data && 'total' in response.data && countEl) {
-                        var newCount = parseInt(response.data.total) || 0;
-                        countEl.textContent = formatNumber(newCount);
-                        console.log('Download count updated to:', newCount);
-                    } else {
-                        console.log('Counter update skipped. Response:', response);
+                    if (response.success && response.data) {
+                        // Update download counter if present
+                        if ('total' in response.data && countEl) {
+                            var newCount = parseInt(response.data.total) || 0;
+                            countEl.textContent = formatNumber(newCount);
+                            console.log('Download count updated to:', newCount);
+                        }
+
+                        // Update remaining downloads if limit is active
+                        if ('remaining' in response.data) {
+                            var remaining = parseInt(response.data.remaining);
+                            if (remaining > 0) {
+                                // Update status to show new remaining count
+                                setTimeout(function() {
+                                    status.className = 'tkm-status info';
+                                    status.textContent = 'You have ' + remaining + ' free download' + (remaining === 1 ? '' : 's') + ' remaining today';
+                                }, 2000);
+                            } else if (remaining === 0) {
+                                // Just hit the limit - show limit reached message
+                                setTimeout(function() {
+                                    status.className = 'tkm-status error';
+                                    status.textContent = 'Daily download limit reached. Please try again tomorrow.';
+                                    btn.disabled = true;
+                                    btn.className = 'tkm-btn disabled';
+                                    downloadLimitReached = true;
+                                }, 2000);
+                            }
+                        }
+                    } else if (!response.success && response.data && response.data.limit_reached) {
+                        // Handle limit reached error
+                        status.className = 'tkm-status error';
+                        status.textContent = response.data.message || 'Daily download limit reached. Please try again tomorrow.';
+                        btn.disabled = true;
+                        btn.className = 'tkm-btn disabled';
+                        downloadLimitReached = true;
                     }
                 } catch (e) {
                     console.log('Counter update failed:', e);

@@ -129,15 +129,32 @@ function tkm_ajax_track_download() {
         // This prevents downloads from being blocked for guests
     }
 
+    // Check daily download limit BEFORE tracking
+    $limit_status = tkm_check_remaining_downloads();
+    if (!$limit_status['unlimited'] && $limit_status['remaining'] <= 0) {
+        wp_send_json_error(array(
+            'message' => __('Daily download limit reached. Please try again tomorrow.', 'teacherske'),
+            'limit_reached' => true,
+            'limit' => $limit_status['limit']
+        ));
+        return;
+    }
+
     // Initialize tracker
     $tracker = new TKM_Download_Tracker();
 
     // Check if tracking is enabled
     if (tkm_get_setting('enable_tracking', 'yes') !== 'yes') {
+        // Still enforce download limit even if tracking is disabled
+        if (!$limit_status['unlimited']) {
+            tkm_increment_download_count();
+        }
+
         wp_send_json_success(array(
             'counted' => false,
             'total' => $tracker->get_download_count($post_id),
-            'message' => __('Tracking disabled', 'teacherske')
+            'message' => __('Tracking disabled', 'teacherske'),
+            'remaining' => $limit_status['remaining'] - 1
         ));
         return;
     }
@@ -145,25 +162,51 @@ function tkm_ajax_track_download() {
     // Track the download
     $result = $tracker->track_download($post_id);
 
+    // Increment daily download counter (separate from document tracking)
+    if (!$limit_status['unlimited']) {
+        tkm_increment_download_count();
+    }
+
     // Always return current count
     $current_count = $tracker->get_download_count($post_id);
+
+    // Get updated remaining count
+    $new_limit_status = tkm_check_remaining_downloads();
 
     if ($result) {
         wp_send_json_success(array(
             'counted' => true,
             'total' => $current_count,
-            'message' => __('Download tracked', 'teacherske')
+            'message' => __('Download tracked', 'teacherske'),
+            'remaining' => $new_limit_status['remaining']
         ));
     } else {
         wp_send_json_success(array(
             'counted' => false,
             'total' => $current_count,
-            'message' => __('Already counted from this IP recently', 'teacherske')
+            'message' => __('Already counted from this IP recently', 'teacherske'),
+            'remaining' => $new_limit_status['remaining']
         ));
     }
 }
 add_action('wp_ajax_tkm_track_download', 'tkm_ajax_track_download');
 add_action('wp_ajax_nopriv_tkm_track_download', 'tkm_ajax_track_download');
+
+/**
+ * AJAX: Check Remaining Downloads
+ */
+function tkm_ajax_check_download_limit() {
+    $limit_status = tkm_check_remaining_downloads();
+
+    wp_send_json_success(array(
+        'remaining' => $limit_status['remaining'],
+        'limit' => $limit_status['limit'],
+        'used' => $limit_status['used'],
+        'unlimited' => $limit_status['unlimited']
+    ));
+}
+add_action('wp_ajax_tkm_check_download_limit', 'tkm_ajax_check_download_limit');
+add_action('wp_ajax_nopriv_tkm_check_download_limit', 'tkm_ajax_check_download_limit');
 
 /**
  * Add Schema.org Markup to Head
