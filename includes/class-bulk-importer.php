@@ -200,8 +200,18 @@ class TKM_Bulk_Importer {
 
         // If normalization didn't work, try the original value
         if ($grade_normalized === $grade_input) {
-            // Check if it's already in correct format
-            $grade_normalized = ucwords(strtolower($grade_input));
+            // Special handling for PP1, PP2 (must be uppercase)
+            if (preg_match('/^pp[12]$/i', $grade_input)) {
+                $grade_normalized = strtoupper($grade_input); // PP1 or PP2
+            }
+            // Special handling for Playgroup (first letter uppercase)
+            elseif (strtolower($grade_input) === 'playgroup') {
+                $grade_normalized = 'Playgroup';
+            }
+            // Default: capitalize first letter of each word
+            else {
+                $grade_normalized = ucwords(strtolower($grade_input));
+            }
         }
 
         // Validate against expected grades for this level
