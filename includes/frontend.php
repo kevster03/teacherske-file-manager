@@ -226,46 +226,19 @@ function tkm_add_schema_markup() {
 add_action('wp_head', 'tkm_add_schema_markup');
 
 /**
- * Add Meta Tags for SEO
+ * Meta Tags Disabled - Handled by RankMath/SEO Plugin
+ *
+ * Note: Meta tags (description, og:*, twitter:*) are intentionally disabled
+ * to prevent conflicts with SEO plugins like RankMath, Yoast, AIOSEO, etc.
+ *
+ * Custom meta fields (_tkm_description, _tkm_grade, _tkm_subject, etc.)
+ * are still stored and accessible by:
+ * - SEO plugins for their own output
+ * - TKM-table-builder plugin for table generation
+ * - Schema.org markup (see tkm_add_schema_markup function above)
+ *
+ * DO NOT re-enable this function unless you remove your SEO plugin.
  */
-function tkm_add_meta_tags() {
-    if (!is_singular('teacher_document')) return;
-    
-    global $post;
-    
-    $description = get_post_meta($post->ID, '_tkm_description', true);
-    $description = $description ?: get_the_excerpt();
-    $description = wp_strip_all_tags($description);
-    $description = tkm_truncate_text($description, 160);
-    
-    $grade = get_post_meta($post->ID, '_tkm_grade', true);
-    $subject = get_post_meta($post->ID, '_tkm_subject', true);
-    
-    $keywords = array_filter(array(get_the_title(), $grade, $subject));
-    
-    ?>
-    <meta name="description" content="<?php echo esc_attr($description); ?>" />
-    <meta name="keywords" content="<?php echo esc_attr(implode(', ', $keywords)); ?>" />
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="<?php echo esc_attr(get_the_title()); ?>" />
-    <meta property="og:description" content="<?php echo esc_attr($description); ?>" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="<?php echo esc_url(get_permalink()); ?>" />
-    <?php if (has_post_thumbnail()): ?>
-    <meta property="og:image" content="<?php echo esc_url(get_the_post_thumbnail_url($post->ID, 'large')); ?>" />
-    <?php endif; ?>
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="<?php echo esc_attr(get_the_title()); ?>" />
-    <meta name="twitter:description" content="<?php echo esc_attr($description); ?>" />
-    <?php if (has_post_thumbnail()): ?>
-    <meta name="twitter:image" content="<?php echo esc_url(get_the_post_thumbnail_url($post->ID, 'large')); ?>" />
-    <?php endif; ?>
-    <?php
-}
-add_action('wp_head', 'tkm_add_meta_tags');
 
 /**
  * Shortcode: Display Single Document

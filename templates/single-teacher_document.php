@@ -26,31 +26,12 @@ $file_size_formatted = $file_size ? tkm_format_file_size($file_size) : '';
 $featured_image = tkm_get_document_image($post_id, 'large');
 $countdown = intval(get_option('tkm_countdown_duration', 10));
 
-// DigitalDocument Schema for Google
-$schema = array(
-'@context' => 'https://schema.org',
-'@type' => 'DigitalDocument',
-'name' => get_the_title(),
-'headline' => get_the_title(),
-'description' => $description ?: wp_trim_words(strip_tags(get_the_content()), 30),
-'author' => array('@type' => 'Person', 'name' => get_the_author(), 'url' => get_author_posts_url(get_the_author_meta('ID'))),
-'datePublished' => get_the_date('c'),
-'dateModified' => get_the_modified_date('c'),
-'publisher' => array('@type' => 'Organization', 'name' => get_bloginfo('name'), 'url' => home_url()),
-'inLanguage' => 'en-KE',
-'educationalLevel' => $grade,
-'about' => $subject,
-'genre' => $category,
-'encodingFormat' => 'application/' . strtolower($file_ext),
-'url' => get_permalink(),
-'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => get_permalink()),
-'keywords' => implode(', ', array_filter(array($grade, $subject, $level_label, $version, 'Kenya CBC'))),
-'interactionStatistic' => array('@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/ViewAction', 'userInteractionCount' => $view_count),
-'isAccessibleForFree' => true
-);
-if (has_post_thumbnail()) $schema['image'] = array('@type' => 'ImageObject', 'url' => get_the_post_thumbnail_url($post_id, 'full'), 'width' => 1200, 'height' => 630);
+/**
+ * Schema.org JSON-LD markup is now handled centrally in includes/frontend.php
+ * via the tkm_add_schema_markup() function to prevent duplicate schema output.
+ * This ensures clean SEO and compatibility with SEO plugins like RankMath.
+ */
 ?>
-<script type="application/ld+json"><?php echo wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 <style>
 /* FORCE OVERRIDE THEME STYLES */
 .tkm-wrap,.tkm-wrap *{box-sizing:border-box !important}
