@@ -23,6 +23,12 @@ function tkm_render_debug_page() {
 
     echo '<div class="wrap"><h1>🔧 Content Blocks Diagnostic</h1>';
 
+    // Handle table creation
+    if (isset($_GET['create_table']) && $_GET['create_table'] === '1') {
+        tkm_create_content_blocks_table();
+        echo '<div class="notice notice-success"><p><strong>✅ Table creation attempted!</strong> Check Test 1 below to verify.</p></div>';
+    }
+
     // Test 1: Check if table exists
     echo '<h2>Test 1: Database Table</h2>';
     $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
@@ -58,8 +64,9 @@ function tkm_render_debug_page() {
             echo '<p style="color:orange;">⚠️ No blocks found in database</p>';
         }
     } else {
-        echo '<p style="color:red;">❌ Table does not exist!</p>';
-        echo '<p><a href="#" onclick="tkm_create_table(); return false;" class="button button-primary">Create Table Now</a></p>';
+        echo '<p style="color:red;">❌ Table does not exist: ' . $table_name . '</p>';
+        echo '<p style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;"><strong>⚠️ The table was not created during plugin activation.</strong><br>This happens when the plugin was already active when the content blocks feature was added.</p>';
+        echo '<p><a href="' . admin_url('admin.php?page=tkm-blocks-debug&create_table=1') . '" class="button button-primary" style="height:auto;padding:10px 20px;font-size:14px;">🔧 Create Table Now</a></p>';
     }
 
     // Test 2: Check WPDB errors
@@ -161,4 +168,47 @@ function tkm_render_debug_page() {
 
     echo '<hr><p><a href="' . admin_url('admin.php?page=tkm-content-blocks') . '" class="button">← Back to Content Blocks</a></p>';
     echo '</div>';
+}
+
+/**
+ * Manually create content blocks table
+ * This is the same code from the activation hook
+ */
+function tkm_create_content_blocks_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'tkm_content_blocks';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        block_title varchar(255) NOT NULL,
+        block_type varchar(50) NOT NULL DEFAULT 'generic',
+        block_content longtext NOT NULL,
+        subject varchar(100) DEFAULT NULL,
+        grade varchar(50) DEFAULT NULL,
+        level varchar(50) DEFAULT NULL,
+        category varchar(100) DEFAULT NULL,
+        has_schema tinyint(1) DEFAULT 0,
+        schema_type varchar(50) DEFAULT NULL,
+        display_order int(11) DEFAULT 0,
+        active tinyint(1) DEFAULT 1,
+        created_date datetime DEFAULT CURRENT_TIMESTAMP,
+        updated_date datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY block_type (block_type),
+        KEY active (active)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+    $wpdb->show_errors();
+    $result = dbDelta($sql);
+
+    if ($wpdb->last_error) {
+        echo '<div class="notice notice-error"><p><strong>❌ Table creation failed:</strong> ' . $wpdb->last_error . '</p></div>';
+    }
+
+    $wpdb->hide_errors();
+
+    return $result;
 }
