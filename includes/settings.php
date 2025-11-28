@@ -42,35 +42,35 @@ function tkm_register_settings() {
     $settings = array(
         // Data Management
         'tkm_remove_on_uninstall',
-        
+
         // Colors
         'tkm_primary_color',
         'tkm_secondary_color',
         'tkm_bg_color_1',
         'tkm_bg_color_2',
-        
+
         // Download Settings
         'tkm_countdown_duration',
         'tkm_enable_tracking',
         'tkm_show_badge',
         'tkm_track_by_ip',
         'tkm_loader_type',
-        
+
         // UI Options
         'tkm_layout_density',
         'tkm_featured_image_size',
         'tkm_show_description',
         'tkm_fallback_image',
         'tkm_related_files_count',
-        'tkm_enable_sidebar', // NEW: Sidebar enable/disable
-        
+        'tkm_enable_sidebar',
+
         // SEO
         'tkm_enable_schema',
-        
+
         // Version Range
         'tkm_version_start',
         'tkm_version_end',
-        
+
         // Subjects
         'tkm_subjects_by_level'
     );
@@ -94,22 +94,22 @@ function tkm_sanitize_setting($value) {
     if (strpos($setting, '_color') !== false) {
         return tkm_sanitize_color($value);
     }
-    
+
     // Boolean fields
     if (in_array($setting, array('remove_on_uninstall', 'enable_tracking', 'show_badge', 'track_by_ip', 'show_description', 'enable_schema', 'enable_sidebar'))) {
         return $value === 'yes' ? 'yes' : 'no';
     }
-    
+
     // Integer fields
     if (in_array($setting, array('countdown_duration', 'featured_image_size', 'related_files_count', 'version_start', 'version_end'))) {
         return intval($value);
     }
-    
+
     // Array fields
     if ($setting === 'subjects_by_level') {
         return is_array($value) ? $value : array();
     }
-    
+
     // URL fields
     if ($setting === 'fallback_image') {
         return esc_url_raw($value);
@@ -193,8 +193,8 @@ function tkm_download_csv_template() {
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
     
     // Headers
-    fputcsv($output, array('title', 'description', 'file_url', 'level', 'grade', 'subject', 'version', 'category', 'featured_image_url'));
-    
+    fputcsv($output, array('title', 'description', 'file_url', 'level', 'grade', 'subject', 'version', 'featured_image_url'));
+
     // Sample rows
     fputcsv($output, array(
         'Grade 7 Mathematics - Algebra Notes',
@@ -204,10 +204,9 @@ function tkm_download_csv_template() {
         'Grade 7',
         'Mathematics',
         '2025 Edition',
-        'Notes',
         'https://example.com/images/math-cover.jpg'
     ));
-    
+
     fputcsv($output, array(
         'PP2 English Activities Term 1',
         'Complete English activities for PP2 learners',
@@ -216,7 +215,6 @@ function tkm_download_csv_template() {
         'PP2',
         'English Activities',
         '2025 Edition',
-        'Schemes',
         'https://example.com/images/pp2-cover.jpg'
     ));
     
@@ -225,36 +223,8 @@ function tkm_download_csv_template() {
 }
 add_action('admin_post_tkm_download_template', 'tkm_download_csv_template');
 
-/**
- * Register CSV Import Page
- */
-function tkm_register_csv_import_page() {
-    add_submenu_page(
-        null, // No menu item, accessed via settings page
-        __('CSV Import', 'teacherske'),
-        __('CSV Import', 'teacherske'),
-        'manage_options',
-        'tkm-csv-import',
-        'tkm_render_csv_import_page'
-    );
-}
-add_action('admin_menu', 'tkm_register_csv_import_page');
-
-/**
- * Render CSV Import Page
- */
-function tkm_render_csv_import_page() {
-    if (!current_user_can('manage_options')) {
-        wp_die(__('You do not have sufficient permissions to access this page.'));
-    }
-    
-    echo '<div class="wrap">';
-    echo '<h1>CSV Import</h1>';
-    echo '<p>CSV bulk import functionality coming soon. Use JSON import for now.</p>';
-    echo '<p><a href="' . admin_url('options-general.php?page=tkm-settings&tab=import') . '" class="button button-primary">Back to Import/Export</a></p>';
-    echo '</div>';
-}
-add_action('admin_menu', 'tkm_register_csv_import_page');
+// NOTE: CSV Import page moved to admin/csv-import-page.php (full implementation)
+// Old placeholder functions removed to prevent duplicate function definition errors
 
 /**
  * Import Documents from JSON

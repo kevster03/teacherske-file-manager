@@ -18,12 +18,12 @@ class TKM_Bulk_Importer {
     /**
      * Optional fields
      */
-    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author');
+    const OPTIONAL_FIELDS = array('description', 'version', 'subject', 'author', 'featured_image');
     
     /**
-     * Maximum file size (5MB)
+     * Maximum file size (10MB)
      */
-    const MAX_FILE_SIZE = 5242880;
+    const MAX_FILE_SIZE = 10485760;
     
     /**
      * Process CSV import
@@ -44,7 +44,7 @@ class TKM_Bulk_Importer {
         if (filesize($file_path) > self::MAX_FILE_SIZE) {
             return array(
                 'success' => false,
-                'error' => __('File too large. Maximum 5MB.', 'teacherske')
+                'error' => __('File too large. Maximum 10MB.', 'teacherske')
             );
         }
         
@@ -152,12 +152,12 @@ class TKM_Bulk_Importer {
     
     /**
      * Import single row
-     * 
+     *
      * @param array $row CSV row data
      * @param array $mapping Field mapping
      * @return array Result
      */
-    private function import_row($row, $mapping) {
+    public function import_row($row, $mapping) {
         // Extract mapped data
         $data = array();
         
@@ -185,14 +185,50 @@ class TKM_Bulk_Importer {
                 'error' => sprintf(__('Invalid level: %s', 'teacherske'), $data['level'])
             );
         }
-        
-        // Validate grade
-        if (!in_array($data['grade'], $levels[$data['level']]['grades'])) {
+
+        // Normalize and validate grade
+        $grade_input = trim($data['grade']);
+
+        // Normalize grade format: "grade 8" -> "Grade 8", "grade7" -> "Grade 7"
+        $grade_normalized = preg_replace_callback(
+            '/^(grade\s*)?(\d+)$/i',
+            function($matches) {
+                return 'Grade ' . $matches[2];
+            },
+            $grade_input
+        );
+
+        // If normalization didn't work, try the original value
+        if ($grade_normalized === $grade_input) {
+            // Special handling for PP1, PP2 (must be uppercase)
+            if (preg_match('/^pp[12]$/i', $grade_input)) {
+                $grade_normalized = strtoupper($grade_input); // PP1 or PP2
+            }
+            // Special handling for Playgroup (first letter uppercase)
+            elseif (strtolower($grade_input) === 'playgroup') {
+                $grade_normalized = 'Playgroup';
+            }
+            // Default: capitalize first letter of each word
+            else {
+                $grade_normalized = ucwords(strtolower($grade_input));
+            }
+        }
+
+        // Validate against expected grades for this level
+        if (!in_array($grade_normalized, $levels[$data['level']]['grades'])) {
             return array(
                 'success' => false,
-                'error' => sprintf(__('Grade "%s" not valid for level "%s"', 'teacherske'), $data['grade'], $data['level'])
+                'error' => sprintf(__('Grade "%s" (normalized to "%s") not valid for level "%s". Expected: %s', 'teacherske'),
+                    $data['grade'],
+                    $grade_normalized,
+                    $data['level'],
+                    implode(', ', $levels[$data['level']]['grades'])
+                )
             );
         }
+
+        // Use the normalized grade
+        $data['grade'] = $grade_normalized;
         
         // Validate file URL
         if (!filter_var($data['file'], FILTER_VALIDATE_URL)) {
@@ -256,15 +292,19 @@ class TKM_Bulk_Importer {
             update_post_meta($post_id, '_tkm_file_size', $size);
         }
         
-        // Add subject
+        // Add subject (as meta field, not taxonomy)
         if (!empty($data['subject'])) {
-            $subjects = array_map('trim', explode(',', $data['subject']));
-            wp_set_post_terms($post_id, $subjects, 'subject');
+            update_post_meta($post_id, '_tkm_subject', sanitize_text_field($data['subject']));
         }
-        
+
+        // Add featured image from URL
+        if (!empty($data['featured_image'])) {
+            $this->download_featured_image($data['featured_image'], $post_id);
+        }
+
         // Initialize download tracking
         update_post_meta($post_id, '_tkm_download_count', 0);
-        
+
         return array(
             'success' => true,
             'post_id' => $post_id
@@ -272,8 +312,76 @@ class TKM_Bulk_Importer {
     }
     
     /**
+     * Download and attach featured image from URL
+     *
+     * @param string $image_url URL to image
+     * @param int $post_id Post ID
+     * @return bool Success status
+     */
+    private function download_featured_image($image_url, $post_id) {
+        // Validate URL
+        $image_url = trim($image_url);
+        if (empty($image_url) || !filter_var($image_url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        // Required WordPress functions
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+        // Download image
+        $tmp = download_url($image_url);
+
+        if (is_wp_error($tmp)) {
+            // Clean up and return false
+            if (file_exists($tmp)) {
+                @unlink($tmp);
+            }
+            return false;
+        }
+
+        // Get file name from URL - ensure it has an extension
+        $file_name = basename($image_url);
+
+        // If filename doesn't have an extension, try to detect from content type
+        if (!preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file_name)) {
+            $file_type = wp_check_filetype($tmp);
+            if ($file_type['ext']) {
+                $file_name = 'featured-image-' . time() . '.' . $file_type['ext'];
+            } else {
+                // Default to jpg if can't detect
+                $file_name = 'featured-image-' . time() . '.jpg';
+            }
+        }
+
+        $file_array = array(
+            'name' => $file_name,
+            'tmp_name' => $tmp
+        );
+
+        // Import to media library
+        $attachment_id = media_handle_sideload($file_array, $post_id);
+
+        // Delete temp file
+        if (file_exists($tmp)) {
+            @unlink($tmp);
+        }
+
+        // Check for errors
+        if (is_wp_error($attachment_id)) {
+            return false;
+        }
+
+        // Set as featured image
+        set_post_thumbnail($post_id, $attachment_id);
+
+        return true;
+    }
+
+    /**
      * Get CSV headers
-     * 
+     *
      * @param string $file_path File path
      * @return array|false Headers or false on error
      */
@@ -305,9 +413,10 @@ class TKM_Bulk_Importer {
             'grade',
             'version',
             'subject',
+            'featured_image',
             'author'
         );
-        
+
         $sample_row = array(
             'Grade 7 Mathematics - Algebra Notes',
             'Comprehensive notes covering all algebra topics',
@@ -316,6 +425,7 @@ class TKM_Bulk_Importer {
             'Grade 7',
             '2026 Edition',
             'Mathematics',
+            'https://example.com/images/cover.jpg',
             'admin'
         );
         
@@ -357,6 +467,7 @@ class TKM_Bulk_Importer {
             'grade' => __('Specific grade (required): PP1, PP2, Grade 1, Grade 2, etc.', 'teacherske'),
             'version' => __('Document version: 2026 Edition, 2027 Edition, etc.', 'teacherske'),
             'subject' => __('Subject name (must match existing subjects)', 'teacherske'),
+            'featured_image' => __('Full URL to featured image (will be downloaded and attached)', 'teacherske'),
             'author' => __('WordPress username or email of document author', 'teacherske')
         );
     }
@@ -366,12 +477,10 @@ class TKM_Bulk_Importer {
  * AJAX: Download CSV Template
  */
 function tkm_ajax_download_template() {
-    check_ajax_referer('tkm_bulk_import', 'nonce');
-    
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_die(__('Permission denied', 'teacherske'));
     }
-    
+
     TKM_Bulk_Importer::download_template();
 }
 add_action('wp_ajax_tkm_download_template', 'tkm_ajax_download_template');

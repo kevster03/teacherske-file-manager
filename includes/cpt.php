@@ -73,6 +73,41 @@ function tkm_register_teacher_document_cpt() {
 add_action('init', 'tkm_register_teacher_document_cpt', 0);
 
 /**
+ * Register Document Template Post Type
+ */
+function tkm_register_template_cpt() {
+    $labels = array(
+        'name' => __('Document Templates', 'teacherske'),
+        'singular_name' => __('Template', 'teacherske'),
+        'menu_name' => __('Templates', 'teacherske'),
+        'add_new' => __('Add Template', 'teacherske'),
+        'add_new_item' => __('Add New Template', 'teacherske'),
+        'edit_item' => __('Edit Template', 'teacherske'),
+        'new_item' => __('New Template', 'teacherske'),
+        'view_item' => __('View Template', 'teacherske'),
+        'all_items' => __('Templates', 'teacherske'),
+        'search_items' => __('Search Templates', 'teacherske'),
+        'not_found' => __('No templates found', 'teacherske'),
+    );
+
+    $args = array(
+        'labels' => $labels,
+        'description' => __('Reusable document templates with predefined metadata', 'teacherske'),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=teacher_document',
+        'capability_type' => 'post',
+        'hierarchical' => false,
+        'supports' => array('title', 'thumbnail'),
+        'show_in_rest' => false,
+        'can_export' => true
+    );
+
+    register_post_type('teacher_template', $args);
+}
+add_action('init', 'tkm_register_template_cpt', 0);
+
+/**
  * Customize Post Type Messages
  */
 function tkm_custom_post_messages($messages) {
@@ -111,7 +146,7 @@ function tkm_admin_columns($columns) {
             $new_columns['tkm_level'] = __('Level', 'teacherske');
             $new_columns['tkm_grade'] = __('Grade', 'teacherske');
             $new_columns['tkm_subject'] = __('Subject', 'teacherske');
-            $new_columns['tkm_downloads'] = __('Downloads', 'teacherske');
+            $new_columns['tkm_views'] = __('Views', 'teacherske');
         }
     }
     
@@ -149,9 +184,9 @@ function tkm_admin_column_content($column, $post_id) {
             echo $subject ? esc_html($subject) : '—';
             break;
             
-        case 'tkm_downloads':
-            $count = intval(get_post_meta($post_id, '_tkm_download_count', true));
-            echo '<strong style="color:#2271b1">' . number_format($count) . '</strong>';
+        case 'tkm_views':
+            $count = intval(get_post_meta($post_id, '_tkm_view_count', true));
+            echo '<strong style="color:#2271b1">👁️ ' . number_format($count) . '</strong>';
             break;
     }
 }
@@ -163,7 +198,7 @@ add_action('manage_teacher_document_posts_custom_column', 'tkm_admin_column_cont
 function tkm_sortable_columns($columns) {
     $columns['tkm_grade'] = 'tkm_grade';
     $columns['tkm_level'] = 'tkm_level';
-    $columns['tkm_downloads'] = 'tkm_downloads';
+    $columns['tkm_views'] = 'tkm_views';
     return $columns;
 }
 add_filter('manage_edit-teacher_document_sortable_columns', 'tkm_sortable_columns');
@@ -182,8 +217,8 @@ function tkm_column_orderby($query) {
     } elseif ($orderby === 'tkm_level') {
         $query->set('meta_key', '_tkm_level');
         $query->set('orderby', 'meta_value');
-    } elseif ($orderby === 'tkm_downloads') {
-        $query->set('meta_key', '_tkm_download_count');
+    } elseif ($orderby === 'tkm_views') {
+        $query->set('meta_key', '_tkm_view_count');
         $query->set('orderby', 'meta_value_num');
     }
 }

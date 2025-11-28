@@ -1,14 +1,14 @@
 <?php
 /**
  * Plugin Name: TeachersKE File Manager
- * Version: 6.0.0
+ * Version: 6.1.0
  * Description: Ultra-optimized document management - Fast, SEO-ready, Ezoic-friendly, RankMath compatible
  * Author: TeachersKE
  * Text Domain: teacherske
  */
 if (!defined('ABSPATH')) exit;
 
-define('TKM_VERSION', '6.0.0');
+define('TKM_VERSION', '6.1.0');
 define('TKM_DIR', plugin_dir_path(__FILE__));
 define('TKM_URL', plugin_dir_url(__FILE__));
 define('TKM_BASENAME', plugin_basename(__FILE__));
@@ -22,7 +22,9 @@ require_once TKM_DIR . 'includes/admin.php';
 require_once TKM_DIR . 'includes/frontend.php';
 require_once TKM_DIR . 'includes/settings.php';
 require_once TKM_DIR . 'includes/class-download-tracker.php';
+require_once TKM_DIR . 'includes/class-view-tracker.php';
 require_once TKM_DIR . 'includes/class-bulk-importer.php';
+require_once TKM_DIR . 'admin/csv-import-page.php';
 
 register_activation_hook(__FILE__, 'tkm_activate_plugin');
 function tkm_activate_plugin() {
@@ -41,6 +43,7 @@ function tkm_activate_plugin() {
         'tkm_version_start' => 2025,
         'tkm_version_end' => 2050,
         'tkm_enable_tracking' => 'yes',
+        'tkm_enable_view_tracking' => 'yes',
         'tkm_track_by_ip' => 'yes',
         'tkm_enable_schema' => 'yes',
         'tkm_enable_sidebar' => 'yes',

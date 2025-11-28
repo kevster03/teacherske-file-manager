@@ -9,11 +9,11 @@
 if (!defined('ABSPATH')) exit;
 
 class TKM_Download_Tracker {
-    
+
     /**
-     * Cooldown period in seconds (1 hour)
+     * Cooldown period in seconds (5 minutes for better UX)
      */
-    const COOLDOWN_PERIOD = 3600; // 1 hour
+    const COOLDOWN_PERIOD = 300; // 5 minutes
     
     /**
      * Track a download

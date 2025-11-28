@@ -52,11 +52,26 @@ function tkm_register_sidebars() {
 add_action('widgets_init', 'tkm_register_sidebars');
 
 /**
+ * Track Page View
+ */
+function tkm_track_page_view() {
+    if (!is_singular('teacher_document')) return;
+
+    $post_id = get_the_ID();
+    if (!$post_id) return;
+
+    // Initialize view tracker
+    $tracker = new TKM_View_Tracker();
+    $tracker->track_view($post_id);
+}
+add_action('wp_head', 'tkm_track_page_view', 1);
+
+/**
  * Enqueue Frontend Assets
  */
 function tkm_frontend_assets() {
     if (!is_singular('teacher_document')) return;
-    
+
     // Frontend CSS (minimal - most CSS is inline for speed)
     wp_enqueue_style(
         'tkm-frontend-css',
@@ -64,7 +79,7 @@ function tkm_frontend_assets() {
         array(),
         TKM_VERSION
     );
-    
+
     // Frontend JavaScript
     wp_enqueue_script(
         'tkm-frontend-js',
@@ -73,7 +88,7 @@ function tkm_frontend_assets() {
         TKM_VERSION,
         true
     );
-    
+
     // Pass settings to JavaScript
     $settings = array(
         'ajaxurl' => admin_url('admin-ajax.php'),
@@ -85,7 +100,7 @@ function tkm_frontend_assets() {
         'primaryColor' => tkm_get_setting('primary_color', '#c92651'),
         'successColor' => '#28a745',
     );
-    
+
     wp_localize_script('tkm-frontend-js', 'tkmSettings', $settings);
 }
 add_action('wp_enqueue_scripts', 'tkm_frontend_assets');
@@ -95,38 +110,54 @@ add_action('wp_enqueue_scripts', 'tkm_frontend_assets');
  */
 function tkm_ajax_track_download() {
     // Verify request
-    if (!isset($_POST['post_id']) || !isset($_POST['nonce'])) {
+    if (!isset($_POST['post_id'])) {
         wp_send_json_error(array('message' => __('Invalid request', 'teacherske')));
     }
-    
+
     $post_id = intval($_POST['post_id']);
-    
-    // Verify nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'tkm_download_' . $post_id)) {
-        wp_send_json_error(array('message' => __('Security check failed', 'teacherske')));
+
+    // Verify nonce (more lenient for logged-out users)
+    if (isset($_POST['nonce'])) {
+        $nonce_verified = wp_verify_nonce($_POST['nonce'], 'tkm_download_' . $post_id);
+
+        // For logged-in users, require valid nonce
+        if (is_user_logged_in() && !$nonce_verified) {
+            wp_send_json_error(array('message' => __('Security check failed', 'teacherske')));
+        }
+
+        // For logged-out users, allow if nonce check fails (less strict)
+        // This prevents downloads from being blocked for guests
     }
-    
+
+    // Initialize tracker
+    $tracker = new TKM_Download_Tracker();
+
     // Check if tracking is enabled
     if (tkm_get_setting('enable_tracking', 'yes') !== 'yes') {
         wp_send_json_success(array(
             'counted' => false,
+            'total' => $tracker->get_download_count($post_id),
             'message' => __('Tracking disabled', 'teacherske')
         ));
+        return;
     }
-    
+
     // Track the download
-    $tracker = new TKM_Download_Tracker();
     $result = $tracker->track_download($post_id);
-    
+
+    // Always return current count
+    $current_count = $tracker->get_download_count($post_id);
+
     if ($result) {
         wp_send_json_success(array(
             'counted' => true,
-            'total' => $tracker->get_download_count($post_id),
+            'total' => $current_count,
             'message' => __('Download tracked', 'teacherske')
         ));
     } else {
         wp_send_json_success(array(
             'counted' => false,
+            'total' => $current_count,
             'message' => __('Already counted from this IP recently', 'teacherske')
         ));
     }
@@ -171,7 +202,6 @@ function tkm_add_schema_markup() {
         'educationalLevel' => $grade,
         'inLanguage' => get_bloginfo('language'),
         'fileFormat' => $file_ext ? 'application/' . $file_ext : '',
-        'contentSize' => $file_size ? $file_size . ' bytes' : '',
         'contentUrl' => $file_url,
         'url' => get_permalink(),
         'keywords' => array_filter(array($grade, $level, $version, $subject))
