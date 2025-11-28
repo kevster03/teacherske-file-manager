@@ -350,6 +350,7 @@ class TKM_Content_Blocks {
         }
 
         global $wpdb;
+        $wpdb->show_errors();
 
         $block_id = isset($_POST['block_id']) ? intval($_POST['block_id']) : 0;
 
@@ -368,12 +369,20 @@ class TKM_Content_Blocks {
         );
 
         if ($block_id) {
-            $wpdb->update($this->table_name, $data, array('id' => $block_id));
+            $result = $wpdb->update($this->table_name, $data, array('id' => $block_id));
+            if ($result === false) {
+                wp_die('Database error during update: ' . $wpdb->last_error . '<br><a href="' . admin_url('admin.php?page=tkm-content-blocks') . '">← Back</a>');
+            }
             $message = 'Block updated successfully!';
         } else {
-            $wpdb->insert($this->table_name, $data);
+            $result = $wpdb->insert($this->table_name, $data);
+            if ($result === false) {
+                wp_die('Database error during insert: ' . $wpdb->last_error . '<br><a href="' . admin_url('admin.php?page=tkm-content-blocks') . '">← Back</a>');
+            }
             $message = 'Block created successfully!';
         }
+
+        $wpdb->hide_errors();
 
         wp_redirect(add_query_arg(array(
             'page' => 'tkm-content-blocks',
@@ -546,15 +555,17 @@ class TKM_Content_Blocks {
     public function sync_to_post_content($post_id) {
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
         if (wp_is_post_revision($post_id)) return;
+        if (!current_user_can('edit_post', $post_id)) return;
 
         $description = get_post_meta($post_id, '_tkm_description', true);
         $selected_blocks = get_post_meta($post_id, '_tkm_selected_blocks', true) ?: array();
 
         $content = '';
 
-        // Add description
+        // ALWAYS add description to post_content for RankMath
         if ($description) {
-            $content .= wpautop($description) . "\n\n";
+            // Keep HTML formatting for RankMath to detect headings, keywords, etc.
+            $content .= $description . "\n\n";
         }
 
         // Add selected blocks
@@ -574,14 +585,13 @@ class TKM_Content_Blocks {
         }
 
         // Update post_content (RankMath will scan this)
-        if (!empty($content)) {
-            remove_action('save_post_teacher_document', array($this, 'sync_to_post_content'), 99);
-            wp_update_post(array(
-                'ID' => $post_id,
-                'post_content' => $content
-            ));
-            add_action('save_post_teacher_document', array($this, 'sync_to_post_content'), 99);
-        }
+        // This runs even if content is empty to clear stale content
+        remove_action('save_post_teacher_document', array($this, 'sync_to_post_content'), 99);
+        wp_update_post(array(
+            'ID' => $post_id,
+            'post_content' => $content
+        ));
+        add_action('save_post_teacher_document', array($this, 'sync_to_post_content'), 99);
     }
 
     /**
