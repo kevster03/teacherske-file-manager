@@ -166,9 +166,19 @@ add_action('wp_ajax_tkm_track_download', 'tkm_ajax_track_download');
 add_action('wp_ajax_nopriv_tkm_track_download', 'tkm_ajax_track_download');
 
 /**
- * Add Schema.org Markup to Head
+ * Schema.org Markup Disabled - Handled by RankMath/SEO Plugin
+ *
+ * Note: Schema output is intentionally disabled to prevent conflicts with
+ * SEO plugins like RankMath which handle schema.org structured data.
+ *
+ * If your SEO plugin does NOT support DigitalDocument schema for this
+ * custom post type, you can re-enable this function by changing the
+ * return statement below to: if (false) return;
  */
 function tkm_add_schema_markup() {
+    // Disabled - RankMath handles schema.org output
+    return;
+
     if (!is_singular('teacher_document')) return;
     if (tkm_get_setting('enable_schema', 'yes') !== 'yes') return;
     
