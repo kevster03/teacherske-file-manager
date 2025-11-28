@@ -243,6 +243,34 @@ $countdown = intval(get_option('tkm_countdown_duration', 10));
 
 </article>
 
+<?php
+// ==========================================
+// AUTO-DISPLAY SELECTED SEO CONTENT BLOCKS
+// ==========================================
+$selected_blocks = get_post_meta($post_id, '_tkm_selected_blocks', true) ?: array();
+
+if (!empty($selected_blocks)) {
+    global $wpdb;
+    $block_ids = implode(',', array_map('intval', $selected_blocks));
+    $blocks = $wpdb->get_results("
+        SELECT * FROM {$wpdb->prefix}tkm_content_blocks
+        WHERE id IN ($block_ids) AND active = 1
+        ORDER BY display_order ASC
+    ");
+
+    // Display each selected block
+    foreach ($blocks as $block) {
+        $bg_colors = array('#c6e0f2', '#e0c8ff', '#f2dec1', '#f2ffb2');
+        $bg_color = $bg_colors[array_rand($bg_colors)];
+
+        echo '<div class="tkm-card tkm-content-block" style="background:' . $bg_color . ' !important;">';
+        echo '<h2 style="font-size:28px !important;font-weight:700 !important;color:#3b1a36 !important;margin:0 0 20px 0 !important;">' . esc_html($block->block_title) . '</h2>';
+        echo wpautop($block->block_content);
+        echo '</div>';
+    }
+}
+?>
+
 <!-- EZOIC AD ZONE 3: BELOW DESCRIPTION -->
 <!-- CONTENT BREAK ZONE - Natural reading pause -->
 <!-- Recommended sizes: 300x250 (Medium Rectangle), Native Ad Unit -->

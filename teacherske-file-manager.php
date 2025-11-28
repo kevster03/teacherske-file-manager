@@ -24,6 +24,7 @@ require_once TKM_DIR . 'includes/settings.php';
 require_once TKM_DIR . 'includes/class-download-tracker.php';
 require_once TKM_DIR . 'includes/class-view-tracker.php';
 require_once TKM_DIR . 'includes/class-bulk-importer.php';
+require_once TKM_DIR . 'includes/class-content-blocks.php';
 require_once TKM_DIR . 'admin/csv-import-page.php';
 
 register_activation_hook(__FILE__, 'tkm_activate_plugin');
@@ -65,6 +66,35 @@ function tkm_activate_plugin() {
     if (get_option('tkm_subjects_by_level') === false) {
         update_option('tkm_subjects_by_level', $default_subjects);
     }
+
+    // Create content blocks table for SEO enhancement
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'tkm_content_blocks';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        block_title varchar(255) NOT NULL,
+        block_type varchar(50) NOT NULL DEFAULT 'generic',
+        block_content longtext NOT NULL,
+        subject varchar(100) DEFAULT NULL,
+        grade varchar(50) DEFAULT NULL,
+        level varchar(50) DEFAULT NULL,
+        category varchar(100) DEFAULT NULL,
+        has_schema tinyint(1) DEFAULT 0,
+        schema_type varchar(50) DEFAULT NULL,
+        display_order int(11) DEFAULT 0,
+        active tinyint(1) DEFAULT 1,
+        created_date datetime DEFAULT CURRENT_TIMESTAMP,
+        updated_date datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY block_type (block_type),
+        KEY active (active)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+
     flush_rewrite_rules();
     set_transient('tkm_activation_notice', true, 30);
 }
