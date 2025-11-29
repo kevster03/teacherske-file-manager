@@ -26,7 +26,7 @@ function tkm_render_debug_page() {
     // Handle table creation
     if (isset($_GET['create_table']) && $_GET['create_table'] === '1') {
         tkm_create_content_blocks_table();
-        echo '<div class="notice notice-success"><p><strong>✅ Table creation attempted!</strong> Check Test 1 below to verify.</p></div>';
+        echo '<div class="notice notice-success"><p><strong>✅ Table creation/update attempted!</strong> Check Test 1 below to verify.</p></div>';
     }
 
     // Test 1: Check if table exists
@@ -35,6 +35,29 @@ function tkm_render_debug_page() {
 
     if ($table_exists) {
         echo '<p style="color:green;">✅ Table exists: ' . $table_name . '</p>';
+
+        // Check if new columns exist
+        $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_name");
+        $column_names = array();
+        foreach ($columns as $column) {
+            $column_names[] = $column->Field;
+        }
+
+        $missing_columns = array();
+        if (!in_array('structured_data', $column_names)) {
+            $missing_columns[] = 'structured_data';
+        }
+        if (!in_array('bg_color', $column_names)) {
+            $missing_columns[] = 'bg_color';
+        }
+
+        if (!empty($missing_columns)) {
+            echo '<p style="color:orange;">⚠️ Missing columns: ' . implode(', ', $missing_columns) . '</p>';
+            echo '<p style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;"><strong>Your table needs to be updated!</strong><br>New columns for structured FAQ/How-To data and custom backgrounds are missing.</p>';
+            echo '<p><a href="' . admin_url('admin.php?page=tkm-blocks-debug&create_table=1') . '" class="button button-primary" style="height:auto;padding:10px 20px;font-size:14px;">🔧 Update Table Now</a></p>';
+        } else {
+            echo '<p style="color:green;">✅ All columns present!</p>';
+        }
 
         // Show table structure
         $columns = $wpdb->get_results("DESCRIBE $table_name");
@@ -171,46 +194,86 @@ function tkm_render_debug_page() {
 }
 
 /**
- * Manually create content blocks table
- * This is the same code from the activation hook
+ * Manually create or update content blocks table
  */
 function tkm_create_content_blocks_table() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'tkm_content_blocks';
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-        id bigint(20) NOT NULL AUTO_INCREMENT,
-        block_title varchar(255) NOT NULL,
-        block_type varchar(50) NOT NULL DEFAULT 'generic',
-        block_content longtext NOT NULL,
-        structured_data longtext DEFAULT NULL,
-        subject varchar(100) DEFAULT NULL,
-        grade varchar(50) DEFAULT NULL,
-        level varchar(50) DEFAULT NULL,
-        category varchar(100) DEFAULT NULL,
-        has_schema tinyint(1) DEFAULT 0,
-        schema_type varchar(50) DEFAULT NULL,
-        bg_color varchar(7) DEFAULT '#c6e0f2',
-        display_order int(11) DEFAULT 0,
-        active tinyint(1) DEFAULT 1,
-        created_date datetime DEFAULT CURRENT_TIMESTAMP,
-        updated_date datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY  (id),
-        KEY block_type (block_type),
-        KEY active (active)
-    ) $charset_collate;";
-
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-
     $wpdb->show_errors();
-    $result = dbDelta($sql);
 
-    if ($wpdb->last_error) {
-        echo '<div class="notice notice-error"><p><strong>❌ Table creation failed:</strong> ' . $wpdb->last_error . '</p></div>';
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
+
+    if (!$table_exists) {
+        // Create new table
+        $sql = "CREATE TABLE $table_name (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            block_title varchar(255) NOT NULL,
+            block_type varchar(50) NOT NULL DEFAULT 'generic',
+            block_content longtext NOT NULL,
+            structured_data longtext DEFAULT NULL,
+            subject varchar(100) DEFAULT NULL,
+            grade varchar(50) DEFAULT NULL,
+            level varchar(50) DEFAULT NULL,
+            category varchar(100) DEFAULT NULL,
+            has_schema tinyint(1) DEFAULT 0,
+            schema_type varchar(50) DEFAULT NULL,
+            bg_color varchar(7) DEFAULT '#c6e0f2',
+            display_order int(11) DEFAULT 0,
+            active tinyint(1) DEFAULT 1,
+            created_date datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_date datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY block_type (block_type),
+            KEY active (active)
+        ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        $result = dbDelta($sql);
+
+        if ($wpdb->last_error) {
+            echo '<div class="notice notice-error"><p><strong>❌ Table creation failed:</strong> ' . $wpdb->last_error . '</p></div>';
+        } else {
+            echo '<div class="notice notice-success"><p><strong>✅ Table created successfully!</strong></p></div>';
+        }
+    } else {
+        // Table exists, check and add missing columns
+        $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_name");
+        $column_names = array();
+        foreach ($columns as $column) {
+            $column_names[] = $column->Field;
+        }
+
+        $updates = array();
+
+        // Add structured_data column if missing
+        if (!in_array('structured_data', $column_names)) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN structured_data LONGTEXT DEFAULT NULL AFTER block_content");
+            if ($wpdb->last_error) {
+                echo '<div class="notice notice-error"><p><strong>❌ Error adding structured_data column:</strong> ' . $wpdb->last_error . '</p></div>';
+            } else {
+                $updates[] = 'structured_data';
+            }
+        }
+
+        // Add bg_color column if missing
+        if (!in_array('bg_color', $column_names)) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN bg_color VARCHAR(7) DEFAULT '#c6e0f2' AFTER schema_type");
+            if ($wpdb->last_error) {
+                echo '<div class="notice notice-error"><p><strong>❌ Error adding bg_color column:</strong> ' . $wpdb->last_error . '</p></div>';
+            } else {
+                $updates[] = 'bg_color';
+            }
+        }
+
+        if (!empty($updates)) {
+            echo '<div class="notice notice-success"><p><strong>✅ Table updated successfully!</strong> Added columns: ' . implode(', ', $updates) . '</p></div>';
+        } else {
+            echo '<div class="notice notice-info"><p><strong>ℹ️ Table is already up to date.</strong> No changes needed.</p></div>';
+        }
     }
 
     $wpdb->hide_errors();
-
-    return $result;
 }
