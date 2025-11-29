@@ -260,12 +260,43 @@ if (!empty($selected_blocks)) {
 
     // Display each selected block
     foreach ($blocks as $block) {
-        $bg_colors = array('#c6e0f2', '#e0c8ff', '#f2dec1', '#f2ffb2');
-        $bg_color = $bg_colors[array_rand($bg_colors)];
+        $bg_color = !empty($block->bg_color) ? $block->bg_color : '#c6e0f2';
 
-        echo '<div class="tkm-card tkm-content-block" style="background:' . $bg_color . ' !important;">';
+        echo '<div class="tkm-card tkm-content-block" style="background:' . esc_attr($bg_color) . ' !important;">';
         echo '<h2 style="font-size:28px !important;font-weight:700 !important;color:#3b1a36 !important;margin:0 0 20px 0 !important;">' . esc_html($block->block_title) . '</h2>';
-        echo wpautop($block->block_content);
+
+        // Check if this is a structured FAQ or How-To block
+        if ($block->has_schema && !empty($block->structured_data)) {
+            $structured = json_decode($block->structured_data, true);
+
+            if ($block->schema_type === 'FAQPage' && !empty($structured['faqs'])) {
+                // Display FAQ items
+                foreach ($structured['faqs'] as $faq) {
+                    echo '<div style="margin-bottom:25px !important;">';
+                    echo '<h3 style="font-size:20px !important;font-weight:700 !important;color:#c92651 !important;margin:0 0 10px 0 !important;">' . esc_html($faq['question']) . '</h3>';
+                    echo '<div style="font-size:16px !important;line-height:1.8 !important;color:#3b1a36 !important;">' . wpautop(wp_kses_post($faq['answer'])) . '</div>';
+                    echo '</div>';
+                }
+            } elseif ($block->schema_type === 'HowTo' && !empty($structured['steps'])) {
+                // Display How-To steps
+                echo '<div style="counter-reset:step-counter;">';
+                foreach ($structured['steps'] as $step) {
+                    echo '<div style="margin-bottom:25px !important;padding-left:40px !important;position:relative !important;">';
+                    echo '<div style="position:absolute !important;left:0 !important;top:0 !important;width:30px !important;height:30px !important;background:#c92651 !important;color:#fff !important;border-radius:50% !important;display:flex !important;align-items:center !important;justify-content:center !important;font-weight:700 !important;">' . esc_html($step['position']) . '</div>';
+                    echo '<h3 style="font-size:20px !important;font-weight:700 !important;color:#c92651 !important;margin:0 0 10px 0 !important;">' . esc_html($step['name']) . '</h3>';
+                    echo '<div style="font-size:16px !important;line-height:1.8 !important;color:#3b1a36 !important;">' . wpautop(wp_kses_post($step['text'])) . '</div>';
+                    echo '</div>';
+                }
+                echo '</div>';
+            } else {
+                // Fallback to regular content
+                echo '<div style="font-size:16px !important;line-height:1.8 !important;color:#3b1a36 !important;">' . wpautop(wp_kses_post($block->block_content)) . '</div>';
+            }
+        } else {
+            // Regular content block - render HTML properly
+            echo '<div style="font-size:16px !important;line-height:1.8 !important;color:#3b1a36 !important;">' . wpautop(wp_kses_post($block->block_content)) . '</div>';
+        }
+
         echo '</div>';
     }
 }

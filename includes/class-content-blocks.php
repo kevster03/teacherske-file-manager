@@ -265,33 +265,6 @@ class TKM_Content_Blocks {
                     </tr>
 
                     <tr>
-                        <th><label for="block_content">Content *</label></th>
-                        <td>
-                            <?php
-                            $content = $block ? $block->block_content : '';
-                            wp_editor($content, 'block_content', array(
-                                'textarea_rows' => 15,
-                                'media_buttons' => false,
-                                'teeny' => false,
-                                'quicktags' => true
-                            ));
-                            ?>
-                            <p class="description">Use HTML headings (H3, H4) and lists for better SEO. RankMath will detect this content!</p>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th>Scope (Optional)</th>
-                        <td>
-                            <p class="description" style="margin:0 0 10px 0;">Leave blank for universal blocks, or specify criteria:</p>
-                            <label>Subject: <input type="text" name="subject" value="<?php echo $block ? esc_attr($block->subject) : ''; ?>" placeholder="e.g., Mathematics"></label><br>
-                            <label>Grade: <input type="text" name="grade" value="<?php echo $block ? esc_attr($block->grade) : ''; ?>" placeholder="e.g., Grade 3"></label><br>
-                            <label>Level: <input type="text" name="level" value="<?php echo $block ? esc_attr($block->level) : ''; ?>" placeholder="e.g., Lower Primary"></label><br>
-                            <label>Category: <input type="text" name="category" value="<?php echo $block ? esc_attr($block->category) : ''; ?>" placeholder="e.g., Schemes of Work"></label>
-                        </td>
-                    </tr>
-
-                    <tr>
                         <th><label for="schema_type">Schema Markup</label></th>
                         <td>
                             <label>
@@ -307,6 +280,110 @@ class TKM_Content_Blocks {
                                 <?php endforeach; ?>
                             </select>
                             <p class="description">FAQ and How-To schemas can appear in Google rich snippets!</p>
+                        </td>
+                    </tr>
+
+                    <?php
+                    // Get existing structured data
+                    $structured_data = array();
+                    if ($block && !empty($block->structured_data)) {
+                        $structured_data = json_decode($block->structured_data, true);
+                    }
+                    ?>
+
+                    <!-- FAQ Fields (shown when FAQPage is selected) -->
+                    <tr id="faq_fields" style="display:none;">
+                        <th><label>FAQ Questions & Answers</label></th>
+                        <td>
+                            <div id="faq_container">
+                                <?php
+                                if (!empty($structured_data['faqs'])) {
+                                    foreach ($structured_data['faqs'] as $index => $faq) {
+                                        ?>
+                                        <div class="faq-item" style="background:#f9f9f9;padding:15px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;">
+                                            <div style="margin-bottom:10px;">
+                                                <label><strong>Question <?php echo $index + 1; ?>:</strong></label>
+                                                <input type="text" name="faq_question[]" value="<?php echo esc_attr($faq['question']); ?>" class="regular-text" style="width:100%;margin-top:5px;">
+                                            </div>
+                                            <div style="margin-bottom:10px;">
+                                                <label><strong>Answer:</strong></label>
+                                                <textarea name="faq_answer[]" rows="4" style="width:100%;margin-top:5px;"><?php echo esc_textarea($faq['answer']); ?></textarea>
+                                            </div>
+                                            <button type="button" class="button remove-faq" style="background:#dc3232;color:#fff;border-color:#dc3232;">Remove</button>
+                                        </div>
+                                        <?php
+                                    }
+                                }
+                                ?>
+                            </div>
+                            <button type="button" id="add_faq" class="button button-secondary">+ Add FAQ Item</button>
+                            <p class="description">Add questions and answers for FAQ schema markup.</p>
+                        </td>
+                    </tr>
+
+                    <!-- How-To Fields (shown when HowTo is selected) -->
+                    <tr id="howto_fields" style="display:none;">
+                        <th><label>How-To Steps</label></th>
+                        <td>
+                            <div id="howto_container">
+                                <?php
+                                if (!empty($structured_data['steps'])) {
+                                    foreach ($structured_data['steps'] as $index => $step) {
+                                        ?>
+                                        <div class="howto-item" style="background:#f9f9f9;padding:15px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;">
+                                            <div style="margin-bottom:10px;">
+                                                <label><strong>Step <?php echo $index + 1; ?> Title:</strong></label>
+                                                <input type="text" name="howto_name[]" value="<?php echo esc_attr($step['name']); ?>" class="regular-text" style="width:100%;margin-top:5px;">
+                                            </div>
+                                            <div style="margin-bottom:10px;">
+                                                <label><strong>Step Instructions:</strong></label>
+                                                <textarea name="howto_text[]" rows="4" style="width:100%;margin-top:5px;"><?php echo esc_textarea($step['text']); ?></textarea>
+                                            </div>
+                                            <button type="button" class="button remove-howto" style="background:#dc3232;color:#fff;border-color:#dc3232;">Remove</button>
+                                        </div>
+                                        <?php
+                                    }
+                                }
+                                ?>
+                            </div>
+                            <button type="button" id="add_howto" class="button button-secondary">+ Add Step</button>
+                            <p class="description">Add step-by-step instructions for How-To schema markup.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Regular Content (shown when no schema or generic) -->
+                    <tr id="regular_content_field">
+                        <th><label for="block_content">Content *</label></th>
+                        <td>
+                            <?php
+                            $content = $block ? $block->block_content : '';
+                            wp_editor($content, 'block_content', array(
+                                'textarea_rows' => 15,
+                                'media_buttons' => false,
+                                'teeny' => false,
+                                'quicktags' => true
+                            ));
+                            ?>
+                            <p class="description">Use the editor toolbar for formatting. RankMath will detect this content!</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th><label for="bg_color">Background Color</label></th>
+                        <td>
+                            <input type="color" id="bg_color" name="bg_color" value="<?php echo $block && $block->bg_color ? esc_attr($block->bg_color) : '#c6e0f2'; ?>" style="width:100px;height:40px;border:1px solid #ddd;border-radius:4px;">
+                            <p class="description">Choose a background color for this block</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Scope (Optional)</th>
+                        <td>
+                            <p class="description" style="margin:0 0 10px 0;">Leave blank for universal blocks, or specify criteria:</p>
+                            <label>Subject: <input type="text" name="subject" value="<?php echo $block ? esc_attr($block->subject) : ''; ?>" placeholder="e.g., Mathematics"></label><br>
+                            <label>Grade: <input type="text" name="grade" value="<?php echo $block ? esc_attr($block->grade) : ''; ?>" placeholder="e.g., Grade 3"></label><br>
+                            <label>Level: <input type="text" name="level" value="<?php echo $block ? esc_attr($block->level) : ''; ?>" placeholder="e.g., Lower Primary"></label><br>
+                            <label>Category: <input type="text" name="category" value="<?php echo $block ? esc_attr($block->category) : ''; ?>" placeholder="e.g., Schemes of Work"></label>
                         </td>
                     </tr>
 
@@ -337,6 +414,85 @@ class TKM_Content_Blocks {
                     <a href="<?php echo admin_url('admin.php?page=tkm-content-blocks'); ?>" class="button">Cancel</a>
                 </p>
             </form>
+
+            <script>
+            jQuery(document).ready(function($) {
+                // Toggle fields based on schema type
+                function toggleFields() {
+                    var schemaType = $('#schema_type').val();
+                    var hasSchema = $('#has_schema').is(':checked');
+
+                    $('#faq_fields, #howto_fields, #regular_content_field').hide();
+
+                    if (hasSchema && schemaType === 'FAQPage') {
+                        $('#faq_fields').show();
+                    } else if (hasSchema && schemaType === 'HowTo') {
+                        $('#howto_fields').show();
+                    } else {
+                        $('#regular_content_field').show();
+                    }
+                }
+
+                $('#has_schema, #schema_type').on('change', toggleFields);
+                toggleFields(); // Initialize on page load
+
+                // Add FAQ item
+                var faqCounter = $('#faq_container .faq-item').length || 0;
+                $('#add_faq').on('click', function() {
+                    faqCounter++;
+                    var html = '<div class="faq-item" style="background:#f9f9f9;padding:15px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;">' +
+                        '<div style="margin-bottom:10px;">' +
+                        '<label><strong>Question ' + faqCounter + ':</strong></label>' +
+                        '<input type="text" name="faq_question[]" class="regular-text" style="width:100%;margin-top:5px;" required>' +
+                        '</div>' +
+                        '<div style="margin-bottom:10px;">' +
+                        '<label><strong>Answer:</strong></label>' +
+                        '<textarea name="faq_answer[]" rows="4" style="width:100%;margin-top:5px;" required></textarea>' +
+                        '</div>' +
+                        '<button type="button" class="button remove-faq" style="background:#dc3232;color:#fff;border-color:#dc3232;">Remove</button>' +
+                        '</div>';
+                    $('#faq_container').append(html);
+                });
+
+                // Remove FAQ item
+                $(document).on('click', '.remove-faq', function() {
+                    $(this).closest('.faq-item').remove();
+                    // Renumber FAQs
+                    $('#faq_container .faq-item').each(function(index) {
+                        $(this).find('label:first strong').text('Question ' + (index + 1) + ':');
+                    });
+                    faqCounter = $('#faq_container .faq-item').length;
+                });
+
+                // Add How-To step
+                var howtoCounter = $('#howto_container .howto-item').length || 0;
+                $('#add_howto').on('click', function() {
+                    howtoCounter++;
+                    var html = '<div class="howto-item" style="background:#f9f9f9;padding:15px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;">' +
+                        '<div style="margin-bottom:10px;">' +
+                        '<label><strong>Step ' + howtoCounter + ' Title:</strong></label>' +
+                        '<input type="text" name="howto_name[]" class="regular-text" style="width:100%;margin-top:5px;" required>' +
+                        '</div>' +
+                        '<div style="margin-bottom:10px;">' +
+                        '<label><strong>Step Instructions:</strong></label>' +
+                        '<textarea name="howto_text[]" rows="4" style="width:100%;margin-top:5px;" required></textarea>' +
+                        '</div>' +
+                        '<button type="button" class="button remove-howto" style="background:#dc3232;color:#fff;border-color:#dc3232;">Remove</button>' +
+                        '</div>';
+                    $('#howto_container').append(html);
+                });
+
+                // Remove How-To step
+                $(document).on('click', '.remove-howto', function() {
+                    $(this).closest('.howto-item').remove();
+                    // Renumber steps
+                    $('#howto_container .howto-item').each(function(index) {
+                        $(this).find('label:first strong').text('Step ' + (index + 1) + ' Title:');
+                    });
+                    howtoCounter = $('#howto_container .howto-item').length;
+                });
+            });
+            </script>
         </div>
         <?php
     }
@@ -353,17 +509,67 @@ class TKM_Content_Blocks {
         $wpdb->show_errors();
 
         $block_id = isset($_POST['block_id']) ? intval($_POST['block_id']) : 0;
+        $has_schema = isset($_POST['has_schema']) ? 1 : 0;
+        $schema_type = sanitize_text_field($_POST['schema_type']);
+
+        // Process structured data for FAQ and How-To
+        $structured_data = null;
+        $block_content = '';
+
+        if ($has_schema && $schema_type === 'FAQPage' && !empty($_POST['faq_question'])) {
+            // Process FAQ data
+            $faqs = array();
+            foreach ($_POST['faq_question'] as $index => $question) {
+                if (!empty($question) && !empty($_POST['faq_answer'][$index])) {
+                    $faqs[] = array(
+                        'question' => sanitize_text_field($question),
+                        'answer' => wp_kses_post($_POST['faq_answer'][$index])
+                    );
+                }
+            }
+            $structured_data = wp_json_encode(array('faqs' => $faqs));
+
+            // Build block_content for RankMath
+            foreach ($faqs as $faq) {
+                $block_content .= '<h3>' . esc_html($faq['question']) . '</h3>' . "\n";
+                $block_content .= wpautop($faq['answer']) . "\n";
+            }
+        } elseif ($has_schema && $schema_type === 'HowTo' && !empty($_POST['howto_name'])) {
+            // Process How-To data
+            $steps = array();
+            foreach ($_POST['howto_name'] as $index => $name) {
+                if (!empty($name) && !empty($_POST['howto_text'][$index])) {
+                    $steps[] = array(
+                        'position' => $index + 1,
+                        'name' => sanitize_text_field($name),
+                        'text' => wp_kses_post($_POST['howto_text'][$index])
+                    );
+                }
+            }
+            $structured_data = wp_json_encode(array('steps' => $steps));
+
+            // Build block_content for RankMath
+            foreach ($steps as $step) {
+                $block_content .= '<h3>' . esc_html($step['name']) . '</h3>' . "\n";
+                $block_content .= wpautop($step['text']) . "\n";
+            }
+        } else {
+            // Regular content block
+            $block_content = wp_kses_post($_POST['block_content']);
+        }
 
         $data = array(
             'block_title' => sanitize_text_field($_POST['block_title']),
             'block_type' => sanitize_key($_POST['block_type']),
-            'block_content' => wp_kses_post($_POST['block_content']),
+            'block_content' => $block_content,
+            'structured_data' => $structured_data,
             'subject' => sanitize_text_field($_POST['subject']),
             'grade' => sanitize_text_field($_POST['grade']),
             'level' => sanitize_text_field($_POST['level']),
             'category' => sanitize_text_field($_POST['category']),
-            'has_schema' => isset($_POST['has_schema']) ? 1 : 0,
-            'schema_type' => sanitize_text_field($_POST['schema_type']),
+            'has_schema' => $has_schema,
+            'schema_type' => $schema_type,
+            'bg_color' => sanitize_hex_color($_POST['bg_color']),
             'display_order' => intval($_POST['display_order']),
             'active' => isset($_POST['active']) ? 1 : 0
         );
@@ -628,20 +834,19 @@ class TKM_Content_Blocks {
      * Output FAQ schema
      */
     private function output_faq_schema($block) {
-        // Parse FAQ content for Q&A pairs
-        $content = wp_strip_all_tags($block->block_content, '<h3><h4>');
-        preg_match_all('/<h[34]>(.*?)<\/h[34]>(.*?)(?=<h[34]>|$)/s', $content, $matches, PREG_SET_ORDER);
+        if (empty($block->structured_data)) return;
 
-        if (empty($matches)) return;
+        $structured = json_decode($block->structured_data, true);
+        if (empty($structured['faqs'])) return;
 
         $questions = array();
-        foreach ($matches as $match) {
+        foreach ($structured['faqs'] as $faq) {
             $questions[] = array(
                 '@type' => 'Question',
-                'name' => wp_strip_all_tags($match[1]),
+                'name' => $faq['question'],
                 'acceptedAnswer' => array(
                     '@type' => 'Answer',
-                    'text' => wp_strip_all_tags(trim($match[2]))
+                    'text' => wp_strip_all_tags($faq['answer'])
                 )
             );
         }
@@ -661,19 +866,18 @@ class TKM_Content_Blocks {
      * Output How-To schema
      */
     private function output_howto_schema($block) {
-        // Parse How-To content for steps
-        $content = wp_strip_all_tags($block->block_content, '<h3><h4><p>');
-        preg_match_all('/<h[34]>(.*?)<\/h[34]>(.*?)(?=<h[34]>|$)/s', $content, $matches, PREG_SET_ORDER);
+        if (empty($block->structured_data)) return;
 
-        if (empty($matches)) return;
+        $structured = json_decode($block->structured_data, true);
+        if (empty($structured['steps'])) return;
 
         $steps = array();
-        foreach ($matches as $index => $match) {
+        foreach ($structured['steps'] as $step) {
             $steps[] = array(
                 '@type' => 'HowToStep',
-                'position' => $index + 1,
-                'name' => wp_strip_all_tags($match[1]),
-                'text' => wp_strip_all_tags(trim($match[2]))
+                'position' => $step['position'],
+                'name' => $step['name'],
+                'text' => wp_strip_all_tags($step['text'])
             );
         }
 
@@ -682,7 +886,7 @@ class TKM_Content_Blocks {
         $schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'HowTo',
-            'name' => esc_html($block->block_title),
+            'name' => $block->block_title,
             'step' => $steps
         );
 
