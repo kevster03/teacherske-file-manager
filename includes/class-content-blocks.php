@@ -388,6 +388,17 @@ class TKM_Content_Blocks {
                     </tr>
 
                     <tr>
+                        <th><label for="display_position">Display Position</label></th>
+                        <td>
+                            <select id="display_position" name="display_position">
+                                <option value="before_related" <?php selected($block && $block->display_position === 'before_related'); ?>>Before Related Resources</option>
+                                <option value="after_description" <?php selected(!$block || $block->display_position === 'after_description'); ?>>After Description (Default)</option>
+                            </select>
+                            <p class="description">Choose where this block appears on the page</p>
+                        </td>
+                    </tr>
+
+                    <tr>
                         <th><label for="display_order">Display Order</label></th>
                         <td>
                             <input type="number" id="display_order" name="display_order"
@@ -570,6 +581,7 @@ class TKM_Content_Blocks {
             'has_schema' => $has_schema,
             'schema_type' => $schema_type,
             'bg_color' => sanitize_hex_color($_POST['bg_color']),
+            'display_position' => sanitize_text_field($_POST['display_position']),
             'display_order' => intval($_POST['display_order']),
             'active' => isset($_POST['active']) ? 1 : 0
         );

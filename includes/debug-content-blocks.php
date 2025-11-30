@@ -50,6 +50,9 @@ function tkm_render_debug_page() {
         if (!in_array('bg_color', $column_names)) {
             $missing_columns[] = 'bg_color';
         }
+        if (!in_array('display_position', $column_names)) {
+            $missing_columns[] = 'display_position';
+        }
 
         if (!empty($missing_columns)) {
             echo '<p style="color:orange;">⚠️ Missing columns: ' . implode(', ', $missing_columns) . '</p>';
@@ -221,6 +224,7 @@ function tkm_create_content_blocks_table() {
             has_schema tinyint(1) DEFAULT 0,
             schema_type varchar(50) DEFAULT NULL,
             bg_color varchar(7) DEFAULT '#c6e0f2',
+            display_position varchar(20) DEFAULT 'after_description',
             display_order int(11) DEFAULT 0,
             active tinyint(1) DEFAULT 1,
             created_date datetime DEFAULT CURRENT_TIMESTAMP,
@@ -265,6 +269,16 @@ function tkm_create_content_blocks_table() {
                 echo '<div class="notice notice-error"><p><strong>❌ Error adding bg_color column:</strong> ' . $wpdb->last_error . '</p></div>';
             } else {
                 $updates[] = 'bg_color';
+            }
+        }
+
+        // Add display_position column if missing
+        if (!in_array('display_position', $column_names)) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN display_position VARCHAR(20) DEFAULT 'after_description' AFTER bg_color");
+            if ($wpdb->last_error) {
+                echo '<div class="notice notice-error"><p><strong>❌ Error adding display_position column:</strong> ' . $wpdb->last_error . '</p></div>';
+            } else {
+                $updates[] = 'display_position';
             }
         }
 

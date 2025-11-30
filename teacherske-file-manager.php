@@ -86,6 +86,7 @@ function tkm_activate_plugin() {
         has_schema tinyint(1) DEFAULT 0,
         schema_type varchar(50) DEFAULT NULL,
         bg_color varchar(7) DEFAULT '#c6e0f2',
+        display_position varchar(20) DEFAULT 'after_description',
         display_order int(11) DEFAULT 0,
         active tinyint(1) DEFAULT 1,
         created_date datetime DEFAULT CURRENT_TIMESTAMP,
