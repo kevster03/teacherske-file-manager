@@ -249,17 +249,13 @@ $countdown = intval(get_option('tkm_countdown_duration', 10));
 // ==========================================
 $selected_blocks = get_post_meta($post_id, '_tkm_selected_blocks', true) ?: array();
 
-if (!empty($selected_blocks)) {
-    global $wpdb;
-    $block_ids = implode(',', array_map('intval', $selected_blocks));
-    $blocks = $wpdb->get_results("
-        SELECT * FROM {$wpdb->prefix}tkm_content_blocks
-        WHERE id IN ($block_ids) AND active = 1
-        ORDER BY display_order ASC
-    ");
-
-    // Display each selected block
+// Function to display blocks
+function tkm_display_blocks($blocks, $position) {
     foreach ($blocks as $block) {
+        // Check if block matches position
+        $block_position = !empty($block->display_position) ? $block->display_position : 'after_description';
+        if ($block_position !== $position) continue;
+
         $bg_color = !empty($block->bg_color) ? $block->bg_color : '#c6e0f2';
 
         echo '<div class="tkm-card tkm-content-block" style="background:' . esc_attr($bg_color) . ' !important;">';
@@ -300,6 +296,21 @@ if (!empty($selected_blocks)) {
         echo '</div>';
     }
 }
+
+// Fetch all selected blocks once
+$all_blocks = array();
+if (!empty($selected_blocks)) {
+    global $wpdb;
+    $block_ids = implode(',', array_map('intval', $selected_blocks));
+    $all_blocks = $wpdb->get_results("
+        SELECT * FROM {$wpdb->prefix}tkm_content_blocks
+        WHERE id IN ($block_ids) AND active = 1
+        ORDER BY display_order ASC
+    ");
+}
+
+// Display blocks positioned "after_description"
+tkm_display_blocks($all_blocks, 'after_description');
 ?>
 
 <!-- EZOIC AD ZONE 3: BELOW DESCRIPTION -->
@@ -319,6 +330,11 @@ if($level && $subject) $related_args['meta_query'][] = array('relation'=>'AND',a
 if($grade) $related_args['meta_query'][] = array('key'=>'_tkm_grade','value'=>$grade);
 $related_query = new WP_Query($related_args);
 if($related_query->have_posts()): ?>
+
+<?php
+// Display blocks positioned "before_related"
+tkm_display_blocks($all_blocks, 'before_related');
+?>
 
 <!-- RELATED RESOURCES -->
 <div class="tkm-related">
