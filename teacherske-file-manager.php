@@ -25,7 +25,6 @@ require_once TKM_DIR . 'includes/class-download-tracker.php';
 require_once TKM_DIR . 'includes/class-view-tracker.php';
 require_once TKM_DIR . 'includes/class-bulk-importer.php';
 require_once TKM_DIR . 'includes/class-content-blocks.php';
-require_once TKM_DIR . 'includes/debug-content-blocks.php';
 require_once TKM_DIR . 'admin/csv-import-page.php';
 
 register_activation_hook(__FILE__, 'tkm_activate_plugin');
